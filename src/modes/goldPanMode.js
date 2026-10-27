@@ -234,18 +234,18 @@ export class GoldPanMode extends BaseMode {
       // 晃動起伏平滑提升
       this.sloshIntensity = Math.min(1.0, this.sloshIntensity + 0.14);
 
-      // 泥沙混濁度漸層由混濁變清澈 (晃動洗淨節奏舒適)
-      const washSpeed = Math.min(2.5, shakePower * 1.4);
+      // 泥沙混濁度漸層由混濁變清澈 (舒適 5 ~ 8 秒淘金黃金節奏：每秒約穩定洗去 15% 泥水)
+      const washSpeed = Math.min(0.38, shakePower * 0.25);
       this.mudLevel = Math.max(0, this.mudLevel - washSpeed);
 
-      // 嚴格維持舒緩節奏（每 280ms 最多 1 個，畫面最多 4 個），水花適度放大更具份量！
+      // 嚴格維持舒緩節奏（每 300ms 最多 1 個，畫面最多 4 個），水花適度放大更具份量！
       const now = performance.now();
-      if (now - this.lastSplashTime > 280 && this.waterSplashes.length < 4 && Math.random() < 0.65) {
+      if (now - this.lastSplashTime > 300 && this.waterSplashes.length < 4 && Math.random() < 0.65) {
         this.lastSplashTime = now;
         const side = Math.random() > 0.5 ? 1 : -1;
         const splashX = this.pan.x + side * (this.pan.radiusX * 0.82);
         const splashY = this.pan.y + (Math.random() - 0.5) * (this.pan.radiusY * 0.25);
-        const isMudSplash = this.mudLevel > 35;
+        const isMudSplash = this.mudLevel > 40;
 
         const vx = side * (2.2 + Math.random() * 2.5);
         const vy = -2.4 - Math.random() * 2.6;
@@ -534,16 +534,44 @@ export class GoldPanMode extends BaseMode {
       const tx = t.relX * this.pan.radiusX;
       const ty = t.relY * this.pan.radiusY;
 
-      // 泥沙混濁度決定寶物的透光可見度
-      const revealFactor = Math.min(1, Math.max(0.06, (100 - this.mudLevel) / 60));
+      // 泥沙混濁度決定寶物的透光可見度 (5~8秒三階段期待體驗)
+      let revealFactor;
+      if (this.mudLevel > 65) {
+        revealFactor = 0.04; // 第 1 階段：厚泥期深藏不露
+      } else if (this.mudLevel > 25) {
+        // 第 2 階段：若隱若現 (0.04 -> 0.65)
+        revealFactor = 0.04 + ((65 - this.mudLevel) / 40) * 0.61;
+      } else {
+        // 第 3 階段：破水而出 (0.65 -> 1.0)
+        revealFactor = 0.65 + ((25 - this.mudLevel) / 25) * 0.35;
+      }
       ctx.save();
-      ctx.globalAlpha = revealFactor;
+      ctx.globalAlpha = Math.min(1, Math.max(0, revealFactor));
 
       const itemImg = getAsset(t.imageName);
-      // 大幅放大驚喜物品尺寸 (從 0.28 擴大至 0.52，洗淨時加入呼吸高光)
+      // 大幅放大驚喜物品尺寸 (洗淨時加入呼吸高光)
       const baseItemSize = Math.max(90, this.pan.radiusX * 0.52);
       const pulse = this.state === 'REVEALED' ? (1 + Math.sin(now * 0.005 + tx) * 0.06) : 1;
       const itemSize = baseItemSize * t.scale * pulse;
+
+      // 第 2 階段 (65% ~ 20%) 若隱若現的微弱金屬星芒閃光
+      if (this.mudLevel <= 65 && this.mudLevel > 20 && !t.isJunk) {
+        const shimmer = (Math.sin(now * 0.009 + tx * 0.1) + 1) * 0.5;
+        if (shimmer > 0.35) {
+          ctx.beginPath();
+          ctx.arc(tx, ty, itemSize * 0.42, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(253, 224, 71, ${0.32 * shimmer * (1 - this.mudLevel / 100)})`;
+          ctx.fill();
+
+          // 微亮小星光
+          const sx = tx + Math.cos(now * 0.004) * (itemSize * 0.28);
+          const sy = ty + Math.sin(now * 0.004) * (itemSize * 0.28);
+          ctx.beginPath();
+          ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(254, 240, 138, ${0.85 * shimmer})`;
+          ctx.fill();
+        }
+      }
 
       if (this.state === 'REVEALED') {
         // 洗淨後的珍寶高光光暈
@@ -647,14 +675,22 @@ export class GoldPanMode extends BaseMode {
       ctx.stroke();
       ctx.restore();
 
-      // 泥水混濁度文字提示
+      // 泥水混濁度與淘金進度階段文字提示
       const pct = Math.round(this.mudLevel);
+      let statusHint = `泥水混濁度: ${pct}%`;
+      if (pct > 65) {
+        statusHint = `厚沙洗滌中… (${pct}%)`;
+      } else if (pct > 25) {
+        statusHint = `✨ 隱約看到金光了！(${pct}%)`;
+      } else {
+        statusHint = `🔥 即將破水而出！(${pct}%)`;
+      }
       ctx.font = 'bold 15px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#f8fafc';
       ctx.shadowColor = 'rgba(0,0,0,0.85)';
       ctx.shadowBlur = 6;
-      ctx.fillText(`泥水混濁度: ${pct}%`, 0, -this.pan.radiusY - 14);
+      ctx.fillText(statusHint, 0, -this.pan.radiusY - 14);
     }
 
     ctx.restore(); // 退出盤子坐標系
