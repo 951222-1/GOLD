@@ -152,20 +152,20 @@ export class GoldPanMode extends BaseMode {
     this.sloshIntensity = 0;
     sound.playScoopWater();
 
-    // 舀水入盤時的輕巧小水花 (僅 3 個自然小水滴，舒適不混亂)
+    // 舀水入盤時的清澈小水花 (維持舒適節奏，尺寸適度放大更顯眼)
     for (let i = 0; i < 3; i++) {
       const angle = -Math.PI * 0.75 + (i / 2) * Math.PI * 0.5;
-      const speed = 2.5 + Math.random() * 2.5;
+      const speed = 2.8 + Math.random() * 2.5;
       this.waterSplashes.push({
         x: this.pan.x + Math.cos(angle) * (this.pan.radiusX * 0.8),
         y: this.pan.y + Math.sin(angle) * (this.pan.radiusY * 0.7),
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.5,
+        vy: Math.sin(angle) * speed - 2.0,
         rotation: Math.random() * 0.5,
         rotSpeed: (Math.random() - 0.5) * 0.03,
         imageName: Math.random() > 0.5 ? 'water_splash.png' : 'water_bubble.png',
-        size: 30 + Math.random() * 14, // 30px ~ 44px
-        alpha: 0.85,
+        size: 55 + Math.random() * 22, // 55px ~ 77px 放大清晰
+        alpha: 0.9,
       });
     }
 
@@ -238,7 +238,7 @@ export class GoldPanMode extends BaseMode {
       const washSpeed = Math.min(2.5, shakePower * 1.4);
       this.mudLevel = Math.max(0, this.mudLevel - washSpeed);
 
-      // 嚴格限制水花發射頻率與數量（每 280ms 最多甩出 1 個小水滴，畫面最多 4 個，舒緩不密集眼花）
+      // 嚴格維持舒緩節奏（每 280ms 最多 1 個，畫面最多 4 個），水花適度放大更具份量！
       const now = performance.now();
       if (now - this.lastSplashTime > 280 && this.waterSplashes.length < 4 && Math.random() < 0.65) {
         this.lastSplashTime = now;
@@ -247,21 +247,21 @@ export class GoldPanMode extends BaseMode {
         const splashY = this.pan.y + (Math.random() - 0.5) * (this.pan.radiusY * 0.25);
         const isMudSplash = this.mudLevel > 35;
 
-        const vx = side * (1.8 + Math.random() * 2.2);
-        const vy = -1.8 - Math.random() * 2.2;
+        const vx = side * (2.2 + Math.random() * 2.5);
+        const vy = -2.4 - Math.random() * 2.6;
 
         this.waterSplashes.push({
           x: splashX,
           y: splashY,
           vx: vx,
           vy: vy,
-          rotation: (side > 0 ? 0.2 : -0.2) + (Math.random() - 0.5) * 0.3,
-          rotSpeed: side * 0.015,
+          rotation: (side > 0 ? 0.22 : -0.22) + (Math.random() - 0.5) * 0.35,
+          rotSpeed: side * 0.018,
           imageName: isMudSplash
             ? (Math.random() > 0.5 ? 'mud_splash.png' : 'mud_rock.png')
             : (Math.random() > 0.5 ? 'water_splash.png' : 'water_bubble.png'),
-          size: 32 + Math.random() * 16, // 適度自然尺寸 32px ~ 48px，清晰不突兀
-          alpha: 0.85,
+          size: 60 + Math.random() * 26, // 放大至 60px ~ 86px，大方顯眼不眼花！
+          alpha: 0.9,
         });
       }
 
