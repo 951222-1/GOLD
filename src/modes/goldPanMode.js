@@ -36,8 +36,8 @@ export class GoldPanMode extends BaseMode {
   constructor() {
     super('goldpan', '體感淘金洗泥沙', { needPose: true, needHand: true });
 
-    // 淘金盤位置與幾何
-    this.pan = { x: 0, y: 0, radiusX: 130, radiusY: 70, tilt: 0 };
+    // 淘金盤位置與動態
+    this.pan = { x: 0, y: 0, radiusX: 260, radiusY: 160, tilt: 0 };
     this.panHistory = []; // 歷史軌跡 (用來精確判定畫圓旋轉動作)
 
     // 水流漩渦旋轉角度與旋轉強度 (ASMR 視覺)
@@ -63,12 +63,13 @@ export class GoldPanMode extends BaseMode {
 
     this.promptText = '👇 將雙手下移浸入溪流，舀起一盤泥沙！';
 
-    // 預熱加載常用圖片
+    // 預熱加載所有第一人稱與物品圖片
     this.preloadAssets();
   }
 
   preloadAssets() {
     const list = [
+      'fp_river_scene.png', 'fp_hand_left.png', 'fp_hand_right.png',
       'gold_pan.png', 'water_vortex.png', 'mud_gravel.png', 'river_bed.png',
       'gold_dust.png', 'gold_coin.png', 'gold_nugget.png', 'ruby.png', 'amber.png',
       'rusty_bolt.png', 'soda_can.png', 'old_boot.png', 'rusty_key.png', 'old_magnet.png', 'fish_bone.png',
@@ -77,10 +78,16 @@ export class GoldPanMode extends BaseMode {
     list.forEach(getAsset);
   }
 
+  updateDimensions(width, height) {
+    this.pan.radiusX = Math.max(160, Math.min(320, width * 0.24));
+    this.pan.radiusY = this.pan.radiusX * 0.62;
+  }
+
   init(width, height) {
     this.reset();
+    this.updateDimensions(width, height);
     this.pan.x = width / 2;
-    this.pan.y = height * 0.72;
+    this.pan.y = height * 0.58;
     this.panHistory = [];
   }
 
@@ -111,13 +118,29 @@ export class GoldPanMode extends BaseMode {
     if (hands.length >= 2) {
       h1 = { x: (1 - hands[0][9].x) * width, y: hands[0][9].y * height };
       h2 = { x: (1 - hands[1][9].x) * width, y: hands[1][9].y * height };
+      // 確保 h1 在左邊, h2 在右邊
+      if (h1.x > h2.x) {
+        const tmp = h1;
+        h1 = h2;
+        h2 = tmp;
+      }
     } else if (hands.length === 1) {
-      h1 = { x: (1 - hands[0][9].x) * width, y: hands[0][9].y * height };
+      const h = { x: (1 - hands[0][9].x) * width, y: hands[0][9].y * height };
+      if (h.x < width / 2) {
+        h1 = h;
+      } else {
+        h2 = h;
+      }
     } else {
       const pose = poseResult?.landmarks?.[0];
       if (pose) {
         if (pose[15]?.visibility > 0.4) h1 = { x: (1 - pose[15].x) * width, y: pose[15].y * height };
         if (pose[16]?.visibility > 0.4) h2 = { x: (1 - pose[16].x) * width, y: pose[16].y * height };
+        if (h1 && h2 && h1.x > h2.x) {
+          const tmp = h1;
+          h1 = h2;
+          h2 = tmp;
+        }
       }
     }
     return { h1, h2 };
@@ -132,7 +155,7 @@ export class GoldPanMode extends BaseMode {
 
     // 隨機決定挖掘物 (1 ~ 3 件，有可能是真金，也可能是搞笑廢鐵)
     this.currentTreasures = [];
-    const itemCount = 1 + (Math.random() < 0.45 ? 1 : 0) + (Math.random() < 0.18 ? 1 : 0);
+    const itemCount = 1 + (Math.random() < 0.5 ? 1 : 0) + (Math.random() < 0.2 ? 1 : 0);
 
     for (let i = 0; i < itemCount; i++) {
       const isJunkRoll = Math.random() < 0.35; // 35% 機率挖出趣味廢鐵
@@ -150,13 +173,13 @@ export class GoldPanMode extends BaseMode {
       }
 
       const angle = Math.random() * Math.PI * 2;
-      const dist = 0.2 + Math.random() * 0.45;
+      const dist = 0.15 + Math.random() * 0.45;
 
       this.currentTreasures.push({
         ...selectedItem,
         relX: Math.cos(angle) * dist,
         relY: Math.sin(angle) * dist,
-        rotation: (Math.random() - 0.5) * 0.4,
+        rotation: (Math.random() - 0.5) * 0.5,
         scale: 0.85 + Math.random() * 0.3,
         collected: false,
       });
@@ -171,7 +194,7 @@ export class GoldPanMode extends BaseMode {
     if (this.panHistory.length > 20) {
       this.panHistory.shift();
     }
-    if (this.panHistory.length < 8) return 0;
+    if (this.panHistory.length < 6) return 0;
 
     let sumX = 0, sumY = 0;
     for (const pt of this.panHistory) {
@@ -193,14 +216,14 @@ export class GoldPanMode extends BaseMode {
 
     const radius = Math.hypot(p2.x - centerX, p2.y - centerY);
 
-    if (radius > 12 && Math.abs(dTheta) > 0.04) {
+    if (radius > 10 && Math.abs(dTheta) > 0.03) {
       return dTheta;
     }
 
-    // 寬容後備：水平晃動也提供一定淘洗力
+    // 寬容後備：水平左右晃動也提供淘洗力
     const speed2D = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-    if (speed2D > 3.5) {
-      return (p2.x > p1.x ? 0.08 : -0.08);
+    if (speed2D > 3.0) {
+      return (p2.x > p1.x ? 0.07 : -0.07);
     }
 
     return 0;
@@ -209,7 +232,7 @@ export class GoldPanMode extends BaseMode {
   // 旋轉淘洗泥沙 (泥水逐漸變清澈)
   processCircularSifting(dTheta) {
     const absD = Math.abs(dTheta);
-    if (absD > 0.03) {
+    if (absD > 0.025) {
       sound.playWaterSlosh();
 
       // 水流旋渦加速旋轉
@@ -217,20 +240,20 @@ export class GoldPanMode extends BaseMode {
       this.swirlIntensity = Math.min(1.0, this.swirlIntensity + 0.08);
 
       // 泥沙混濁度遞減 (依旋轉力道平滑洗淨)
-      const washSpeed = Math.min(1.8, absD * 12);
+      const washSpeed = Math.min(2.0, absD * 14);
       this.mudLevel = Math.max(0, this.mudLevel - washSpeed);
 
       // 沿著切線甩出盤緣的水花泥水
-      if (Math.random() < 0.6) {
-        const splashAngle = this.vortexAngle + Math.random() * 0.5;
+      if (Math.random() < 0.65) {
+        const splashAngle = this.vortexAngle + Math.random() * 0.6;
         const isMudSplash = this.mudLevel > 35;
         this.waterSplashes.push({
-          x: this.pan.x + Math.cos(splashAngle) * (this.pan.radiusX * 0.85),
-          y: this.pan.y + Math.sin(splashAngle) * (this.pan.radiusY * 0.85),
-          vx: Math.cos(splashAngle + Math.PI / 2) * (2 + Math.random() * 4),
-          vy: -1.5 - Math.random() * 2.5,
+          x: this.pan.x + Math.cos(splashAngle) * (this.pan.radiusX * 0.9),
+          y: this.pan.y + Math.sin(splashAngle) * (this.pan.radiusY * 0.9),
+          vx: Math.cos(splashAngle + Math.PI / 2) * (3 + Math.random() * 4),
+          vy: -2.0 - Math.random() * 3.0,
           imageName: isMudSplash ? (Math.random() > 0.5 ? 'mud_splash.png' : 'mud_rock.png') : (Math.random() > 0.5 ? 'water_splash.png' : 'water_bubble.png'),
-          size: 20 + Math.random() * 18,
+          size: 24 + Math.random() * 20,
           alpha: 1,
         });
       }
@@ -239,7 +262,7 @@ export class GoldPanMode extends BaseMode {
       if (this.mudLevel <= 0 && this.state === 'SIFTING') {
         this.state = 'REVEALED';
         sound.playFanfare();
-        this.promptText = '✨ 溪水澄澈透底！伸手碰觸或傾倒淘金盤，看看洗出了什麼！';
+        this.promptText = '✨ 溪水澄澈透底！伸手碰觸或傾斜淘金盤，將收穫入袋！';
       }
     } else {
       this.vortexSpeed *= 0.92;
@@ -274,7 +297,7 @@ export class GoldPanMode extends BaseMode {
       text: gainText,
       subText: t.quote,
       x: absX,
-      y: absY - 15,
+      y: absY - 20,
       alpha: 1,
       color: t.color,
       imageName: t.imageName,
@@ -288,46 +311,53 @@ export class GoldPanMode extends BaseMode {
           this.roundsCompleted += 1;
           this.promptText = '🎉 淘洗完畢！再次將雙手伸入溪流舀取下一盤！';
         }
-      }, 900);
+      }, 1000);
     }
   }
 
   update({ handResult, poseResult }, renderer, width, height) {
     const ctx = renderer.ctx;
+    this.updateDimensions(width, height);
     const { h1, h2 } = this.getHandsPosition(handResult, poseResult, width, height);
 
-    // 1. 計算淘金盤位置
+    // 1. 計算淘金盤位置 (雙手重心或單手驅動)
     let targetX = width / 2;
-    let targetY = height * 0.74;
+    let targetY = height * 0.58;
     let tiltAngle = 0;
 
     if (h1 && h2) {
       targetX = (h1.x + h2.x) / 2;
       targetY = (h1.y + h2.y) / 2;
       tiltAngle = Math.atan2(h2.y - h1.y, h2.x - h1.x);
+      // 限制傾斜角在自然人體範圍 (-40度 ~ 40度)
+      tiltAngle = Math.max(-0.7, Math.min(0.7, tiltAngle));
     } else if (h1) {
-      targetX = h1.x;
+      targetX = h1.x + this.pan.radiusX * 0.35;
       targetY = h1.y;
+    } else if (h2) {
+      targetX = h2.x - this.pan.radiusX * 0.35;
+      targetY = h2.y;
     }
 
-    this.pan.x += (targetX - this.pan.x) * 0.35;
-    this.pan.y += (targetY - this.pan.y) * 0.35;
-    this.pan.tilt = tiltAngle;
+    // 平滑插值 (保持靈活又沉著的手感)
+    this.pan.x += (targetX - this.pan.x) * 0.32;
+    this.pan.y += (targetY - this.pan.y) * 0.32;
+    this.pan.tilt += (tiltAngle - this.pan.tilt) * 0.3;
 
     // 2. 畫圓旋轉偵測與水流物理
     const dTheta = this.detectCircularSwirl(this.pan.x, this.pan.y);
     this.vortexAngle += this.vortexSpeed;
 
-    const streamY = height * 0.72; // 溪流高度邊界
+    const streamY = height * 0.64; // 溪流水位線
 
     if (this.state === 'EMPTY') {
-      if (this.pan.y > streamY + 20) {
+      if (this.pan.y > streamY + 15) {
         this.scoopGravel(width, height);
       }
     } else if (this.state === 'SIFTING') {
       this.processCircularSifting(dTheta);
     } else if (this.state === 'REVEALED') {
-      const isTilted = Math.abs(this.pan.tilt) > 0.45 || this.pan.y < height * 0.35;
+      const isTilted = Math.abs(this.pan.tilt) > 0.42 || this.pan.y < height * 0.36;
 
       for (const t of this.currentTreasures) {
         if (t.collected) continue;
@@ -335,8 +365,8 @@ export class GoldPanMode extends BaseMode {
         const absY = this.pan.y + t.relY * this.pan.radiusY;
 
         let touched = false;
-        if (h1 && Math.hypot(h1.x - absX, h1.y - absY) < 55) touched = true;
-        if (h2 && Math.hypot(h2.x - absX, h2.y - absY) < 55) touched = true;
+        if (h1 && Math.hypot(h1.x - absX, h1.y - absY) < 65) touched = true;
+        if (h2 && Math.hypot(h2.x - absX, h2.y - absY) < 65) touched = true;
         if (isTilted) touched = true;
 
         if (touched) {
@@ -351,7 +381,7 @@ export class GoldPanMode extends BaseMode {
       sp.x += sp.vx;
       sp.y += sp.vy;
       sp.vy += 0.22;
-      sp.alpha -= 0.025;
+      sp.alpha -= 0.024;
       if (sp.alpha <= 0) {
         this.waterSplashes.splice(i, 1);
       }
@@ -371,48 +401,109 @@ export class GoldPanMode extends BaseMode {
     this.renderCanvas(ctx, width, height, h1, h2, streamY);
   }
 
+  // 繪製第一人稱雙臂 Inverse Kinematics
+  drawFirstPersonArms(ctx, width, height, panX, panY, tiltAngle, panW, panH) {
+    const handL = getAsset('fp_hand_left.png');
+    const handR = getAsset('fp_hand_right.png');
+
+    // 左手臂：從螢幕左下角延伸至盤緣左側
+    if (handL.complete && handL.naturalWidth > 0) {
+      const rx_l = -panW * 0.38;
+      const ry_l = panH * 0.05;
+      const gripLx = panX + rx_l * Math.cos(tiltAngle) - ry_l * Math.sin(tiltAngle);
+      const gripLy = panY + rx_l * Math.sin(tiltAngle) + ry_l * Math.cos(tiltAngle);
+      const anchorLx = width * 0.12;
+      const anchorLy = height + 25;
+
+      const distL = Math.hypot(gripLx - anchorLx, gripLy - anchorLy);
+      const angleL = Math.atan2(gripLy - anchorLy, gripLx - anchorLx);
+
+      const srcDistL = Math.hypot(70, -150);
+      const srcAngleL = Math.atan2(-150, 70);
+      const scaleL = distL / srcDistL;
+      const rotL = angleL - srcAngleL;
+
+      ctx.save();
+      ctx.translate(gripLx, gripLy);
+      ctx.rotate(rotL);
+      ctx.scale(scaleL, scaleL);
+      ctx.drawImage(handL, -110, -40);
+      ctx.restore();
+    }
+
+    // 右手臂：從螢幕右下角延伸至盤緣右側
+    if (handR.complete && handR.naturalWidth > 0) {
+      const rx_r = panW * 0.38;
+      const ry_r = panH * 0.05;
+      const gripRx = panX + rx_r * Math.cos(tiltAngle) - ry_r * Math.sin(tiltAngle);
+      const gripRy = panY + rx_r * Math.sin(tiltAngle) + ry_r * Math.cos(tiltAngle);
+      const anchorRx = width * 0.88;
+      const anchorRy = height + 25;
+
+      const distR = Math.hypot(gripRx - anchorRx, gripRy - anchorRy);
+      const angleR = Math.atan2(gripRy - anchorRy, gripRx - anchorRx);
+
+      const srcDistR = Math.hypot(-70, -150);
+      const srcAngleR = Math.atan2(-150, -70);
+      const scaleR = distR / srcDistR;
+      const rotR = angleR - srcAngleR;
+
+      ctx.save();
+      ctx.translate(gripRx, gripRy);
+      ctx.rotate(rotR);
+      ctx.scale(scaleR, scaleR);
+      ctx.drawImage(handR, -50, -40);
+      ctx.restore();
+    }
+  }
+
   renderCanvas(ctx, width, height, h1, h2, streamY) {
     ctx.save();
 
-    // 1. 繪製底部溪流河床圖片 (River Bed)
-    const riverImg = getAsset('river_bed.png');
-    const riverHeight = height - streamY + 45;
-    if (riverImg.complete && riverImg.naturalWidth > 0) {
-      ctx.drawImage(riverImg, 0, streamY - 35, width, riverHeight);
+    // 1. 全螢幕繪製第一人稱清澈溪流背景 (Scenic River Scene)
+    const riverScene = getAsset('fp_river_scene.png');
+    if (riverScene.complete && riverScene.naturalWidth > 0) {
+      ctx.drawImage(riverScene, 0, 0, width, height);
     } else {
-      // 後備漸層
-      const streamGrad = ctx.createLinearGradient(0, streamY, 0, height);
-      streamGrad.addColorStop(0, 'rgba(14, 116, 144, 0.45)');
-      streamGrad.addColorStop(1, 'rgba(8, 47, 73, 0.92)');
-      ctx.fillStyle = streamGrad;
-      ctx.fillRect(0, streamY, width, height - streamY);
+      // 後備溪流風景漸層
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+      bgGrad.addColorStop(0, '#7dd3fc');
+      bgGrad.addColorStop(0.3, '#38bdf8');
+      bgGrad.addColorStop(0.7, '#0284c7');
+      bgGrad.addColorStop(1, '#075985');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
     }
 
-    // 溪流水波波紋線
-    ctx.beginPath();
-    ctx.moveTo(0, streamY);
-    for (let x = 0; x <= width; x += 30) {
-      const wave = Math.sin(x * 0.02 + performance.now() * 0.0025) * 5;
-      ctx.lineTo(x, streamY + wave);
+    // 溪流水光波光粼粼特效
+    const now = performance.now();
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = '#fef08a';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      const waveY = streamY + i * 25 + Math.sin(now * 0.002 + i) * 6;
+      ctx.moveTo(width * 0.2, waveY);
+      ctx.quadraticCurveTo(width * 0.5, waveY + Math.cos(now * 0.0025 + i) * 12, width * 0.8, waveY);
+      ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
-    ctx.lineWidth = 2.0;
-    ctx.stroke();
+    ctx.restore();
 
     // 2. 進入淘金盤坐標系
+    const panW = this.pan.radiusX * 2.2;
+    const panH = this.pan.radiusY * 2.2;
+
     ctx.save();
     ctx.translate(this.pan.x, this.pan.y);
     ctx.rotate(this.pan.tilt);
 
     const panImg = getAsset('gold_pan.png');
-    const panW = this.pan.radiusX * 2.15;
-    const panH = this.pan.radiusY * 2.15;
 
     // 繪製金屬淘金盤圖片
     if (panImg.complete && panImg.naturalWidth > 0) {
       ctx.drawImage(panImg, -panW / 2, -panH / 2, panW, panH);
     } else {
-      // 後備盤身繪製
       ctx.beginPath();
       ctx.ellipse(0, 0, this.pan.radiusX, this.pan.radiusY, 0, 0, Math.PI * 2);
       ctx.fillStyle = '#1e293b';
@@ -428,19 +519,19 @@ export class GoldPanMode extends BaseMode {
       const tx = t.relX * this.pan.radiusX;
       const ty = t.relY * this.pan.radiusY;
 
-      // 泥沙厚度漸層決定寶物的可見度
-      const revealFactor = Math.min(1, Math.max(0.08, (100 - this.mudLevel) / 70));
+      // 泥沙混濁度決定寶物的透光可見度
+      const revealFactor = Math.min(1, Math.max(0.06, (100 - this.mudLevel) / 60));
       ctx.save();
       ctx.globalAlpha = revealFactor;
 
       const itemImg = getAsset(t.imageName);
-      const itemSize = 58 * t.scale;
+      const itemSize = Math.max(48, this.pan.radiusX * 0.28) * t.scale;
 
       if (this.state === 'REVEALED') {
-        // 洗淨後的金色/閃爍光暈
+        // 洗淨後的珍寶高光光暈
         ctx.beginPath();
         ctx.arc(tx, ty, itemSize * 0.65, 0, Math.PI * 2);
-        ctx.fillStyle = t.isJunk ? 'rgba(168, 162, 158, 0.35)' : 'rgba(250, 204, 21, 0.45)';
+        ctx.fillStyle = t.isJunk ? 'rgba(168, 162, 158, 0.35)' : 'rgba(250, 204, 21, 0.5)';
         ctx.fill();
       }
 
@@ -450,8 +541,7 @@ export class GoldPanMode extends BaseMode {
       if (itemImg.complete && itemImg.naturalWidth > 0) {
         ctx.drawImage(itemImg, -itemSize / 2, -itemSize / 2, itemSize, itemSize);
       } else {
-        // 後備 Emoji
-        ctx.font = '26px sans-serif';
+        ctx.font = '28px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(t.icon, 0, 0);
@@ -463,18 +553,16 @@ export class GoldPanMode extends BaseMode {
     if (this.mudLevel > 0) {
       const mudRatio = this.mudLevel / 100;
       ctx.save();
-      ctx.globalAlpha = mudRatio * 0.95;
+      ctx.globalAlpha = mudRatio * 0.94;
 
       const mudImg = getAsset('mud_gravel.png');
-      const mudW = this.pan.radiusX * 1.85;
-      const mudH = this.pan.radiusY * 1.85;
+      const mudW = this.pan.radiusX * 1.8;
+      const mudH = this.pan.radiusY * 1.8;
 
       if (mudImg.complete && mudImg.naturalWidth > 0) {
-        // 隨旋轉角度微動
-        ctx.rotate(this.vortexAngle * 0.3);
+        ctx.rotate(this.vortexAngle * 0.35);
         ctx.drawImage(mudImg, -mudW / 2, -mudH / 2, mudW, mudH);
       } else {
-        // 後備泥水遮罩
         ctx.beginPath();
         ctx.ellipse(0, 0, this.pan.radiusX * 0.88, this.pan.radiusY * 0.88, 0, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(85, 55, 35, ${mudRatio * 0.85})`;
@@ -484,8 +572,8 @@ export class GoldPanMode extends BaseMode {
     } else {
       // 泥沙沖淨後的清澈水光倒影
       const clearGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, this.pan.radiusX * 0.85);
-      clearGrad.addColorStop(0, 'rgba(56, 189, 248, 0.22)');
-      clearGrad.addColorStop(1, 'rgba(14, 165, 233, 0.05)');
+      clearGrad.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
+      clearGrad.addColorStop(1, 'rgba(14, 165, 233, 0.04)');
       ctx.beginPath();
       ctx.ellipse(0, 0, this.pan.radiusX * 0.88, this.pan.radiusY * 0.88, 0, 0, Math.PI * 2);
       ctx.fillStyle = clearGrad;
@@ -496,7 +584,7 @@ export class GoldPanMode extends BaseMode {
     if (this.state === 'SIFTING') {
       ctx.save();
       const vortexImg = getAsset('water_vortex.png');
-      const vortexSize = this.pan.radiusX * 1.7;
+      const vortexSize = this.pan.radiusX * 1.75;
       ctx.rotate(this.vortexAngle);
       ctx.globalAlpha = Math.min(0.85, 0.25 + this.swirlIntensity * 0.6);
 
@@ -507,15 +595,15 @@ export class GoldPanMode extends BaseMode {
 
       // 泥水混濁度文字提示
       const pct = Math.round(this.mudLevel);
-      ctx.font = 'bold 13px sans-serif';
+      ctx.font = 'bold 15px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#f8fafc';
       ctx.shadowColor = 'rgba(0,0,0,0.85)';
-      ctx.shadowBlur = 5;
+      ctx.shadowBlur = 6;
       ctx.fillText(`泥水混濁度: ${pct}%`, 0, -this.pan.radiusY - 14);
     }
 
-    ctx.restore(); // 退出盤子座標系
+    ctx.restore(); // 退出盤子坐標系
 
     // 6. 繪製甩出的水花滴或泥石顆粒
     for (const sp of this.waterSplashes) {
@@ -533,48 +621,54 @@ export class GoldPanMode extends BaseMode {
       ctx.restore();
     }
 
-    // 7. 繪製浮動提示跳字
+    // 7. 繪製第一人稱雙手臂握盤 (第一視角最關鍵沉浸感！)
+    this.drawFirstPersonArms(ctx, width, height, this.pan.x, this.pan.y, this.pan.tilt, panW, panH);
+
+    // 8. 繪製浮動提示跳字
     for (const pop of this.popups) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, pop.alpha);
-      ctx.font = 'bold 18px sans-serif';
+      ctx.font = 'bold 20px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = pop.color;
       ctx.shadowColor = 'rgba(0,0,0,0.95)';
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 7;
       ctx.fillText(pop.text, pop.x, pop.y);
 
       if (pop.subText) {
-        ctx.font = '12px sans-serif';
-        ctx.fillStyle = '#cbd5e1';
-        ctx.fillText(pop.subText, pop.x, pop.y + 18);
+        ctx.font = '13px sans-serif';
+        ctx.fillStyle = '#f1f5f9';
+        ctx.shadowBlur = 4;
+        ctx.fillText(pop.subText, pop.x, pop.y + 20);
       }
       ctx.restore();
     }
 
-    // 8. 頂部引導文字
+    // 9. 頂部引導指示牌
+    ctx.save();
     ctx.textAlign = 'center';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillStyle = '#f8fafc';
+    ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(0,0,0,0.9)';
-    ctx.shadowBlur = 5;
-    ctx.fillText(this.promptText, width / 2, 42);
+    ctx.shadowBlur = 6;
+    ctx.fillText(this.promptText, width / 2, 38);
 
-    // 雙手位置引導光圈
+    // 雙手位置即時追蹤小光圈 (輔助引導)
     [h1, h2].forEach((h) => {
       if (h) {
         ctx.beginPath();
-        ctx.arc(h.x, h.y, 8, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(250, 204, 21, 0.85)';
+        ctx.arc(h.x, h.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.7)';
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(h.x, h.y, 16, 0, Math.PI * 2);
-        ctx.strokeStyle = '#fde047';
-        ctx.lineWidth = 2;
+        ctx.arc(h.x, h.y, 14, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(253, 224, 71, 0.8)';
+        ctx.lineWidth = 1.8;
         ctx.stroke();
       }
     });
 
+    ctx.restore();
     ctx.restore();
   }
 

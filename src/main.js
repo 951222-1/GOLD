@@ -130,14 +130,6 @@ function renderLoop() {
     );
 
     renderer.clear(width, height);
-
-    if (poseResult?.landmarks?.[0]) {
-      renderer.drawPose(poseResult.landmarks[0], width, height);
-    }
-    if (handResult?.landmarks?.length) {
-      renderer.drawHands(handResult, width, height);
-    }
-
     goldPanGame.update({ handResult, poseResult }, renderer, width, height);
 
     const detected = poseResult?.landmarks?.[0] || handResult?.landmarks?.length;
