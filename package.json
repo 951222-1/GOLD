@@ -1,0 +1,17 @@
+{
+  "name": "mediapipe-goldpan-game",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host localhost --port 5176",
+    "build": "vite build",
+    "preview": "vite preview --host localhost --port 5176"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "latest"
+  },
+  "devDependencies": {
+    "vite": "latest"
+  }
+}
