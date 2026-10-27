@@ -408,25 +408,25 @@ export class GoldPanMode extends BaseMode {
     this.renderCanvas(ctx, width, height, h1, h2, streamY);
   }
 
-  // 繪製第一人稱雙臂 Inverse Kinematics
+  // 繪製第一人稱雙臂 Inverse Kinematics (新版雙手緊扣手勢)
   drawFirstPersonArms(ctx, width, height, panX, panY, tiltAngle, panW, panH) {
     const handL = getAsset('fp_hand_left.png');
     const handR = getAsset('fp_hand_right.png');
 
-    // 左手臂：從螢幕左下角延伸至盤緣左側
+    // 左手臂：從螢幕左下角延伸至盤緣左側 (有力緊扣盤緣)
     if (handL.complete && handL.naturalWidth > 0) {
-      const rx_l = -panW * 0.38;
-      const ry_l = panH * 0.05;
+      const rx_l = -panW * 0.43;
+      const ry_l = panH * 0.06;
       const gripLx = panX + rx_l * Math.cos(tiltAngle) - ry_l * Math.sin(tiltAngle);
       const gripLy = panY + rx_l * Math.sin(tiltAngle) + ry_l * Math.cos(tiltAngle);
-      const anchorLx = width * 0.12;
-      const anchorLy = height + 25;
+      const anchorLx = width * 0.05;
+      const anchorLy = height + 40;
 
       const distL = Math.hypot(gripLx - anchorLx, gripLy - anchorLy);
       const angleL = Math.atan2(gripLy - anchorLy, gripLx - anchorLx);
 
-      const srcDistL = Math.hypot(70, -150);
-      const srcAngleL = Math.atan2(-150, 70);
+      const srcDistL = Math.hypot(200, -290);
+      const srcAngleL = Math.atan2(-290, 200);
       const scaleL = distL / srcDistL;
       const rotL = angleL - srcAngleL;
 
@@ -434,24 +434,24 @@ export class GoldPanMode extends BaseMode {
       ctx.translate(gripLx, gripLy);
       ctx.rotate(rotL);
       ctx.scale(scaleL, scaleL);
-      ctx.drawImage(handL, -110, -40);
+      ctx.drawImage(handL, -270, -70);
       ctx.restore();
     }
 
-    // 右手臂：從螢幕右下角延伸至盤緣右側
+    // 右手臂：從螢幕右下角延伸至盤緣右側 (有力緊扣盤緣)
     if (handR.complete && handR.naturalWidth > 0) {
-      const rx_r = panW * 0.38;
-      const ry_r = panH * 0.05;
+      const rx_r = panW * 0.43;
+      const ry_r = panH * 0.06;
       const gripRx = panX + rx_r * Math.cos(tiltAngle) - ry_r * Math.sin(tiltAngle);
       const gripRy = panY + rx_r * Math.sin(tiltAngle) + ry_r * Math.cos(tiltAngle);
-      const anchorRx = width * 0.88;
-      const anchorRy = height + 25;
+      const anchorRx = width * 0.95;
+      const anchorLy = height + 40;
 
       const distR = Math.hypot(gripRx - anchorRx, gripRy - anchorRy);
       const angleR = Math.atan2(gripRy - anchorRy, gripRx - anchorRx);
 
-      const srcDistR = Math.hypot(-70, -150);
-      const srcAngleR = Math.atan2(-150, -70);
+      const srcDistR = Math.hypot(-195, -290);
+      const srcAngleR = Math.atan2(-290, -195);
       const scaleR = distR / srcDistR;
       const rotR = angleR - srcAngleR;
 
@@ -459,7 +459,7 @@ export class GoldPanMode extends BaseMode {
       ctx.translate(gripRx, gripRy);
       ctx.rotate(rotR);
       ctx.scale(scaleR, scaleR);
-      ctx.drawImage(handR, -50, -40);
+      ctx.drawImage(handR, -55, -70);
       ctx.restore();
     }
   }
