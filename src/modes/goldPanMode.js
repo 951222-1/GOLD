@@ -38,14 +38,12 @@ export class GoldPanMode extends BaseMode {
 
     // 淘金盤位置與動態
     this.pan = { x: 0, y: 0, radiusX: 260, radiusY: 160, tilt: 0 };
-    this.panHistory = []; // 歷史軌跡 (用來精確判定畫圓旋轉動作)
+    this.panHistory = []; // 歷史軌跡 (用來判定簡單自然晃動)
 
-    // 水流漩渦旋轉角度與旋轉強度 (ASMR 視覺)
-    this.vortexAngle = 0;
-    this.vortexSpeed = 0;
-    this.swirlIntensity = 0;
+    // 水流晃動起伏強度 (溫和搖擺 ASMR 視覺，不 360 度旋轉以免眼花)
+    this.sloshIntensity = 0;
 
-    // 淘金狀態: 'EMPTY' (等待舀沙) | 'SIFTING' (旋轉淘洗中) | 'REVEALED' (泥清寶現)
+    // 淘金狀態: 'EMPTY' (等待舀沙) | 'SIFTING' (簡單晃動淘洗中) | 'REVEALED' (泥清寶現)
     this.state = 'EMPTY';
     this.mudLevel = 0; // 100 -> 0 (混濁度)
 
@@ -100,8 +98,7 @@ export class GoldPanMode extends BaseMode {
     this.roundsCompleted = 0;
     this.state = 'EMPTY';
     this.mudLevel = 0;
-    this.vortexSpeed = 0;
-    this.swirlIntensity = 0;
+    this.sloshIntensity = 0;
     this.panHistory = [];
     this.waterSplashes = [];
     this.currentTreasures = [];
@@ -150,7 +147,7 @@ export class GoldPanMode extends BaseMode {
   scoopGravel(width, height) {
     this.state = 'SIFTING';
     this.mudLevel = 100;
-    this.swirlIntensity = 0;
+    this.sloshIntensity = 0;
     sound.playScoopWater();
 
     // 隨機決定挖掘物 (1 ~ 3 件，有可能是真金，也可能是搞笑廢鐵)
@@ -185,75 +182,57 @@ export class GoldPanMode extends BaseMode {
       });
     }
 
-    this.promptText = '🌀 雙手畫圓旋轉淘洗～ 感受水流旋渦與泥沙沖刷洗淨！';
+    this.promptText = '🌊 雙手自然左右晃動淘洗～ 泥水漸漸澄澈透底！';
   }
 
-  // 偵測「雙手畫圓旋轉」動作物理
-  detectCircularSwirl(curX, curY) {
+  // 偵測簡單自然晃動 (不需360度轉圈，只需左右或微幅前後搖晃)
+  detectShakingMotion(curX, curY) {
     this.panHistory.push({ x: curX, y: curY, time: performance.now() });
-    if (this.panHistory.length > 20) {
+    if (this.panHistory.length > 10) {
       this.panHistory.shift();
     }
-    if (this.panHistory.length < 6) return 0;
-
-    let sumX = 0, sumY = 0;
-    for (const pt of this.panHistory) {
-      sumX += pt.x;
-      sumY += pt.y;
-    }
-    const centerX = sumX / this.panHistory.length;
-    const centerY = sumY / this.panHistory.length;
+    if (this.panHistory.length < 3) return 0;
 
     const p1 = this.panHistory[this.panHistory.length - 2];
     const p2 = this.panHistory[this.panHistory.length - 1];
 
-    const angle1 = Math.atan2(p1.y - centerY, p1.x - centerX);
-    const angle2 = Math.atan2(p2.y - centerY, p2.x - centerX);
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const speed = Math.hypot(dx, dy);
 
-    let dTheta = angle2 - angle1;
-    while (dTheta > Math.PI) dTheta -= Math.PI * 2;
-    while (dTheta < -Math.PI) dTheta += Math.PI * 2;
-
-    const radius = Math.hypot(p2.x - centerX, p2.y - centerY);
-
-    if (radius > 10 && Math.abs(dTheta) > 0.03) {
-      return dTheta;
+    // 只要有簡單自然的晃動（左右微晃或輕搖）
+    if (speed > 2.0) {
+      return Math.min(1.8, speed / 5.5);
     }
-
-    // 寬容後備：水平左右晃動也提供淘洗力
-    const speed2D = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-    if (speed2D > 3.0) {
-      return (p2.x > p1.x ? 0.07 : -0.07);
-    }
-
     return 0;
   }
 
-  // 旋轉淘洗泥沙 (泥水逐漸變清澈)
-  processCircularSifting(dTheta) {
-    const absD = Math.abs(dTheta);
-    if (absD > 0.025) {
+  // 溫和晃動淘洗泥沙 (泥水逐漸變清澈，柔和舒適不暈眩)
+  processShakingSift(shakePower) {
+    if (shakePower > 0.1) {
       sound.playWaterSlosh();
 
-      // 水流旋渦加速旋轉
-      this.vortexSpeed = dTheta * 1.8;
-      this.swirlIntensity = Math.min(1.0, this.swirlIntensity + 0.08);
+      // 晃動起伏平滑提升
+      this.sloshIntensity = Math.min(1.0, this.sloshIntensity + 0.14);
 
-      // 泥沙混濁度遞減 (依旋轉力道平滑洗淨)
-      const washSpeed = Math.min(2.0, absD * 14);
+      // 泥沙混濁度漸層由混濁變清澈 (晃動洗淨節奏舒適)
+      const washSpeed = Math.min(2.5, shakePower * 1.4);
       this.mudLevel = Math.max(0, this.mudLevel - washSpeed);
 
-      // 沿著切線甩出盤緣的水花泥水
-      if (Math.random() < 0.65) {
-        const splashAngle = this.vortexAngle + Math.random() * 0.6;
+      // 左右溫和甩出小水滴或泥粒 (兩側拋出，非旋轉噴濺)
+      if (Math.random() < 0.42) {
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const splashX = this.pan.x + side * (this.pan.radiusX * 0.85);
+        const splashY = this.pan.y + (Math.random() - 0.5) * (this.pan.radiusY * 0.35);
         const isMudSplash = this.mudLevel > 35;
+
         this.waterSplashes.push({
-          x: this.pan.x + Math.cos(splashAngle) * (this.pan.radiusX * 0.9),
-          y: this.pan.y + Math.sin(splashAngle) * (this.pan.radiusY * 0.9),
-          vx: Math.cos(splashAngle + Math.PI / 2) * (3 + Math.random() * 4),
-          vy: -2.0 - Math.random() * 3.0,
+          x: splashX,
+          y: splashY,
+          vx: side * (2 + Math.random() * 3),
+          vy: -1.2 - Math.random() * 2.2,
           imageName: isMudSplash ? (Math.random() > 0.5 ? 'mud_splash.png' : 'mud_rock.png') : (Math.random() > 0.5 ? 'water_splash.png' : 'water_bubble.png'),
-          size: 24 + Math.random() * 20,
+          size: 22 + Math.random() * 16,
           alpha: 1,
         });
       }
@@ -262,11 +241,10 @@ export class GoldPanMode extends BaseMode {
       if (this.mudLevel <= 0 && this.state === 'SIFTING') {
         this.state = 'REVEALED';
         sound.playFanfare();
-        this.promptText = '✨ 溪水澄澈透底！伸手碰觸或傾斜淘金盤，將收穫入袋！';
+        this.promptText = '✨ 泥沙已洗淨、溪水清澈！伸手碰觸或傾斜淘金盤，將收穫入袋！';
       }
     } else {
-      this.vortexSpeed *= 0.92;
-      this.swirlIntensity *= 0.94;
+      this.sloshIntensity *= 0.90;
     }
   }
 
@@ -345,9 +323,8 @@ export class GoldPanMode extends BaseMode {
     this.pan.y += (targetY - this.pan.y) * 0.32;
     this.pan.tilt += (tiltAngle - this.pan.tilt) * 0.3;
 
-    // 2. 畫圓旋轉偵測與水流物理
-    const dTheta = this.detectCircularSwirl(this.pan.x, this.pan.y);
-    this.vortexAngle += this.vortexSpeed;
+    // 2. 溫和晃動偵測與水流物理 (簡單自然晃動，不需 360 度轉)
+    const shakePower = this.detectShakingMotion(this.pan.x, this.pan.y);
 
     const streamY = height * 0.64; // 溪流水位線
 
@@ -356,7 +333,7 @@ export class GoldPanMode extends BaseMode {
         this.scoopGravel(width, height);
       }
     } else if (this.state === 'SIFTING') {
-      this.processCircularSifting(dTheta);
+      this.processShakingSift(shakePower);
     } else if (this.state === 'REVEALED') {
       const isTilted = Math.abs(this.pan.tilt) > 0.42 || this.pan.y < height * 0.36;
 
@@ -575,8 +552,15 @@ export class GoldPanMode extends BaseMode {
       const mudW = this.pan.radiusX * 1.8;
       const mudH = this.pan.radiusY * 1.8;
 
+      // 4. 繪製盤中泥沙與礫石層 (溫和微晃，絕不 360 度旋轉以免眼花)
+      const sloshShiftX = Math.sin(now * 0.005) * (10 * this.sloshIntensity);
+      const sloshShiftY = Math.cos(now * 0.005) * (4 * this.sloshIntensity);
+      const sloshWobble = Math.sin(now * 0.005) * (0.04 * this.sloshIntensity);
+
+      ctx.translate(sloshShiftX, sloshShiftY);
+      ctx.rotate(sloshWobble);
+
       if (mudImg.complete && mudImg.naturalWidth > 0) {
-        ctx.rotate(this.vortexAngle * 0.35);
         ctx.drawImage(mudImg, -mudW / 2, -mudH / 2, mudW, mudH);
       } else {
         ctx.beginPath();
@@ -596,13 +580,20 @@ export class GoldPanMode extends BaseMode {
       ctx.fill();
     }
 
-    // 5. 繪製旋轉水流漩渦 (Water Vortex)
+    // 5. 繪製水波晃動效果 (溫和左右搖擺，絕不 360 度旋轉)
     if (this.state === 'SIFTING') {
       ctx.save();
       const vortexImg = getAsset('water_vortex.png');
       const vortexSize = this.pan.radiusX * 1.75;
-      ctx.rotate(this.vortexAngle);
-      ctx.globalAlpha = Math.min(0.85, 0.25 + this.swirlIntensity * 0.6);
+
+      // 溫和水波晃動 (左右微幅擺動 ±3 度，柔和起伏)
+      const waveShiftX = Math.sin(now * 0.006) * (12 * this.sloshIntensity);
+      const waveShiftY = Math.cos(now * 0.006) * (4 * this.sloshIntensity);
+      const waveAngle = Math.sin(now * 0.006) * (0.05 * this.sloshIntensity);
+
+      ctx.translate(waveShiftX, waveShiftY);
+      ctx.rotate(waveAngle);
+      ctx.globalAlpha = Math.min(0.65, 0.15 + this.sloshIntensity * 0.45);
 
       if (vortexImg.complete && vortexImg.naturalWidth > 0) {
         ctx.drawImage(vortexImg, -vortexSize / 2, -vortexSize / 2 * (this.pan.radiusY / this.pan.radiusX), vortexSize, vortexSize * (this.pan.radiusY / this.pan.radiusX));

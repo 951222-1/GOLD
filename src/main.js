@@ -12,7 +12,7 @@ app.innerHTML = `
       <div>
         <p class="eyebrow">MEDIAPIPE VISION INTERACTIVE</p>
         <h1>體感淘金洗泥沙 🪙</h1>
-        <p class="subtitle">雙手化作淘金盤深入溪流舀沙，畫圓旋轉淘洗讓泥水漸漸澄澈，淘出大金塊與逗趣古怪雜物！</p>
+        <p class="subtitle">雙手化作淘金盤深入溪流舀沙，自然晃動淘洗讓泥水漸漸澄澈，淘出大金塊與逗趣古怪雜物！</p>
       </div>
       <div class="hero-actions">
         <button class="secondary icon-btn" id="soundToggle" title="音效開關">🔊 音效</button>
@@ -51,9 +51,9 @@ app.innerHTML = `
         <small>雙手捧盤下移浸入畫面下方的流水波光處，舀起滿盤厚重沉甸甸的河底泥沙。</small>
       </article>
       <article>
-        <span class="info-label">STEP 2. 畫圓淘洗</span>
-        <strong>雙手畫圓旋轉沖洗</strong>
-        <small>雙手在胸前畫圓旋轉淘洗，水流形成漩渦，泥水漸漸由混濁變清澈，雜質隨浪花甩出！</small>
+        <span class="info-label">STEP 2. 輕柔淘洗</span>
+        <strong>雙手自然晃動沖洗</strong>
+        <small>雙手在胸前自然左右搖晃淘洗，泥水漸漸由混濁變清澈，雜質隨柔和水波洗淨！</small>
       </article>
       <article>
         <span class="info-label">STEP 3. 解壓驚喜</span>
