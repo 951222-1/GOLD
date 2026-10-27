@@ -450,7 +450,7 @@ export class GoldPanMode extends BaseMode {
         const gripRx = panX + rx_r * Math.cos(tiltAngle) - ry_r * Math.sin(tiltAngle);
         const gripRy = panY + rx_r * Math.sin(tiltAngle) + ry_r * Math.cos(tiltAngle);
         const anchorRx = width * 0.95;
-        const anchorLy = height + 40;
+        const anchorRy = height + 40;
 
         const distR = Math.hypot(gripRx - anchorRx, gripRy - anchorRy);
         const angleR = Math.atan2(gripRy - anchorRy, gripRx - anchorRx);
