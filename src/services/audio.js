@@ -405,28 +405,55 @@ class SoundEffects {
     } catch {}
   }
 
-  // 淘金搖晃水花嘩啦聲 (優先播放真實 清脆溪水拍打 ASMR 聲.mp3，大音量清晰輸出)
+  // 淘金搖晃水花嘩啦聲 (播放真實 清脆溪水拍打 ASMR 聲.mp3，舒緩自然韻律、防重疊嘈雜)
   playWaterSlosh() {
     if (!this.enabled) return;
     const now = performance.now();
-    if (now - this.lastWaterSloshTime < 400) return; // 400ms 靈敏節流，晃動即刻響應
+    // 設置 1300ms 舒緩間隔，完美對齊 5~8 秒左右擺動的浪濤週期，不吵雜、不疊加
+    if (now - this.lastWaterSloshTime < 1300) return;
     this.lastWaterSloshTime = now;
 
-    // 大幅增強溪水拍打音量至 1.8 (飽滿澎湃、清晰自然的清脆流水 ASMR)
-    if (this.playBuffer('water_slosh', {
-      volume: 1.8,
-      detune: (Math.random() - 0.5) * 50,
-    })) {
-      return;
+    this.init();
+    if (!this.ctx) return;
+
+    const buffer = this.audioBuffers['water_slosh'];
+    if (buffer) {
+      try {
+        const audioNow = this.ctx.currentTime;
+        // 若上一段水聲還在發聲，0.25 秒平滑淡出，杜絕多軌重疊帶來的嘈雜噪聲
+        if (this.currentWaterGain && this.currentWaterSource) {
+          try {
+            this.currentWaterGain.gain.linearRampToValueAtTime(0.001, audioNow + 0.25);
+            this.currentWaterSource.stop(audioNow + 0.25);
+          } catch {}
+        }
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        const gainNode = this.ctx.createGain();
+
+        // 適中清晰的舒適音量 1.05
+        gainNode.gain.setValueAtTime(1.05, audioNow);
+
+        source.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+        source.start(audioNow);
+
+        this.currentWaterSource = source;
+        this.currentWaterGain = gainNode;
+        return;
+      } catch (err) {
+        console.warn('Water slosh play error:', err);
+      }
     }
 
     // 備援：若 AudioBuffer 仍在加載解碼，直接透過 HTML5 Audio 播放
     const el = this.audioElements?.['water_slosh'];
     if (el) {
       try {
-        const clone = el.cloneNode();
-        clone.volume = 1.0;
-        clone.play().catch(() => {});
+        el.currentTime = 0;
+        el.volume = 0.8;
+        el.play().catch(() => {});
         return;
       } catch {}
     }
