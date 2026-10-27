@@ -26,9 +26,28 @@ class SoundEffects {
     }
   }
 
-  // 預載外部 MP3 音效檔案並透過 AudioContext 解碼為高品質低延遲 Buffer
+  // 預載外部 MP3 音效檔案並透過 AudioContext 解碼為高品質低延遲 Buffer (兼容 Promise 與 Callback)
+  decodeAudio(arrayBuf) {
+    return new Promise((resolve, reject) => {
+      const copy = arrayBuf.slice(0);
+      try {
+        const ret = this.ctx.decodeAudioData(
+          copy,
+          (decoded) => resolve(decoded),
+          (err) => reject(err)
+        );
+        if (ret && typeof ret.then === 'function') {
+          ret.then(resolve).catch(reject);
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
   async loadSoundAssets() {
     this.loading = true;
+    this.audioElements = {};
     const soundList = [
       { key: 'water_slosh', file: 'water_slosh.mp3' }, // 清脆溪水拍打 ASMR 聲
       { key: 'coin_clink', file: 'coin_clink.mp3' },   // 金幣清脆碰撞音效
@@ -38,11 +57,16 @@ class SoundEffects {
     for (const item of soundList) {
       try {
         const url = `${BASE}audio/${item.file}`.replace('//', '/');
+        // HTML5 Audio 備援物件
+        const audioEl = new Audio(url);
+        audioEl.preload = 'auto';
+        this.audioElements[item.key] = audioEl;
+
         const resp = await fetch(url);
         if (!resp.ok) continue;
         const arrayBuf = await resp.arrayBuffer();
         if (this.ctx) {
-          const decoded = await this.ctx.decodeAudioData(arrayBuf);
+          const decoded = await this.decodeAudio(arrayBuf);
           this.audioBuffers[item.key] = decoded;
         }
       } catch (err) {
@@ -381,54 +405,65 @@ class SoundEffects {
     } catch {}
   }
 
-  // 淘金搖晃水花嘩啦聲 (優先播放真實 清脆溪水拍打 ASMR 聲.mp3)
+  // 淘金搖晃水花嘩啦聲 (優先播放真實 清脆溪水拍打 ASMR 聲.mp3，大音量清晰輸出)
   playWaterSlosh() {
     if (!this.enabled) return;
     const now = performance.now();
-    if (now - this.lastWaterSloshTime < 750) return; // 750ms 舒適節流，維持天然溪水拍打 ASMR 的自然流動
+    if (now - this.lastWaterSloshTime < 400) return; // 400ms 靈敏節流，晃動即刻響應
     this.lastWaterSloshTime = now;
 
+    // 大幅增強溪水拍打音量至 1.8 (飽滿澎湃、清晰自然的清脆流水 ASMR)
     if (this.playBuffer('water_slosh', {
-      volume: 0.4,
-      detune: (Math.random() - 0.5) * 60,
-      maxDuration: 2.3,
+      volume: 1.8,
+      detune: (Math.random() - 0.5) * 50,
     })) {
       return;
+    }
+
+    // 備援：若 AudioBuffer 仍在加載解碼，直接透過 HTML5 Audio 播放
+    const el = this.audioElements?.['water_slosh'];
+    if (el) {
+      try {
+        const clone = el.cloneNode();
+        clone.volume = 1.0;
+        clone.play().catch(() => {});
+        return;
+      } catch {}
     }
 
     this.fallbackWaterSlosh();
   }
 
-  // 淘金水花後備合成音
+  // 淘金水花後備合成音 (音量強化至 0.6)
   fallbackWaterSlosh() {
     try {
       this.init();
       if (!this.ctx) return;
       const t = this.ctx.currentTime;
 
-      const bufferSize = Math.floor(this.ctx.sampleRate * 0.15);
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.18);
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.5;
+        data[i] = (Math.random() * 2 - 1) * 0.7;
       }
       const noise = this.ctx.createBufferSource();
       noise.buffer = buffer;
 
       const filter = this.ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(500, t);
-      filter.Q.value = 1.8;
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(900, t);
+      filter.frequency.exponentialRampToValueAtTime(300, t + 0.22);
 
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.12, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      gain.gain.setValueAtTime(0.65, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
 
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(this.ctx.destination);
       noise.start(t);
-      noise.stop(t + 0.15);
+      noise.stop(t + 0.22);
     } catch {}
   }
 
