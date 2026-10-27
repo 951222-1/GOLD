@@ -49,6 +49,7 @@ export class GoldPanMode extends BaseMode {
 
     // 水花粒子與當前物品
     this.waterSplashes = [];
+    this.lastSplashTime = 0;
     this.currentTreasures = [];
     this.popups = [];
 
@@ -101,6 +102,7 @@ export class GoldPanMode extends BaseMode {
     this.sloshIntensity = 0;
     this.panHistory = [];
     this.waterSplashes = [];
+    this.lastSplashTime = 0;
     this.currentTreasures = [];
     this.popups = [];
     this.promptText = '👇 將雙手下移浸入溪流，舀起一盤泥沙！';
@@ -150,20 +152,20 @@ export class GoldPanMode extends BaseMode {
     this.sloshIntensity = 0;
     sound.playScoopWater();
 
-    // 舀水入盤時的清澈溪流水花爆發！
-    for (let i = 0; i < 8; i++) {
-      const angle = -Math.PI * 0.88 + (i / 7) * Math.PI * 0.76;
-      const speed = 4.5 + Math.random() * 5.0;
+    // 舀水入盤時的輕巧小水花 (僅 3 個自然小水滴，舒適不混亂)
+    for (let i = 0; i < 3; i++) {
+      const angle = -Math.PI * 0.75 + (i / 2) * Math.PI * 0.5;
+      const speed = 2.5 + Math.random() * 2.5;
       this.waterSplashes.push({
-        x: this.pan.x + Math.cos(angle) * (this.pan.radiusX * 0.85),
-        y: this.pan.y + Math.sin(angle) * (this.pan.radiusY * 0.75),
+        x: this.pan.x + Math.cos(angle) * (this.pan.radiusX * 0.8),
+        y: this.pan.y + Math.sin(angle) * (this.pan.radiusY * 0.7),
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 2.5,
-        rotation: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.08,
-        imageName: Math.random() > 0.4 ? 'water_splash.png' : 'water_bubble.png',
-        size: 70 + Math.random() * 55, // 大尺寸鮮明水花！
-        alpha: 1,
+        vy: Math.sin(angle) * speed - 1.5,
+        rotation: Math.random() * 0.5,
+        rotSpeed: (Math.random() - 0.5) * 0.03,
+        imageName: Math.random() > 0.5 ? 'water_splash.png' : 'water_bubble.png',
+        size: 30 + Math.random() * 14, // 30px ~ 44px
+        alpha: 0.85,
       });
     }
 
@@ -224,41 +226,42 @@ export class GoldPanMode extends BaseMode {
     return 0;
   }
 
-  // 溫和晃動淘洗泥沙 (泥水逐漸變清澈，水花動態鮮明顯眼)
+  // 溫和晃動淘洗泥沙 (泥水逐漸變清澈，水花疏朗清爽不眼花)
   processShakingSift(shakePower) {
     if (shakePower > 0.1) {
       sound.playWaterSlosh();
 
       // 晃動起伏平滑提升
-      this.sloshIntensity = Math.min(1.0, this.sloshIntensity + 0.16);
+      this.sloshIntensity = Math.min(1.0, this.sloshIntensity + 0.14);
 
       // 泥沙混濁度漸層由混濁變清澈 (晃動洗淨節奏舒適)
       const washSpeed = Math.min(2.5, shakePower * 1.4);
       this.mudLevel = Math.max(0, this.mudLevel - washSpeed);
 
-      // 左右兩側噴灑出華麗鮮明的大水花與泥珠！
-      const splashCount = 1 + Math.floor(shakePower * 2.2);
-      for (let s = 0; s < splashCount; s++) {
+      // 嚴格限制水花發射頻率與數量（每 280ms 最多甩出 1 個小水滴，畫面最多 4 個，舒緩不密集眼花）
+      const now = performance.now();
+      if (now - this.lastSplashTime > 280 && this.waterSplashes.length < 4 && Math.random() < 0.65) {
+        this.lastSplashTime = now;
         const side = Math.random() > 0.5 ? 1 : -1;
-        const splashX = this.pan.x + side * (this.pan.radiusX * (0.75 + Math.random() * 0.25));
-        const splashY = this.pan.y + (Math.random() - 0.5) * (this.pan.radiusY * 0.45);
+        const splashX = this.pan.x + side * (this.pan.radiusX * 0.82);
+        const splashY = this.pan.y + (Math.random() - 0.5) * (this.pan.radiusY * 0.25);
         const isMudSplash = this.mudLevel > 35;
 
-        const vx = side * (3.5 + Math.random() * 4.5 * shakePower);
-        const vy = -3.2 - Math.random() * 4.2 * shakePower;
+        const vx = side * (1.8 + Math.random() * 2.2);
+        const vy = -1.8 - Math.random() * 2.2;
 
         this.waterSplashes.push({
           x: splashX,
           y: splashY,
           vx: vx,
           vy: vy,
-          rotation: (side > 0 ? 0.35 : -0.35) + (Math.random() - 0.5) * 0.5,
-          rotSpeed: side * (0.02 + Math.random() * 0.05),
+          rotation: (side > 0 ? 0.2 : -0.2) + (Math.random() - 0.5) * 0.3,
+          rotSpeed: side * 0.015,
           imageName: isMudSplash
-            ? (Math.random() > 0.45 ? 'mud_splash.png' : 'mud_rock.png')
-            : (Math.random() > 0.45 ? 'water_splash.png' : 'water_bubble.png'),
-          size: 65 + Math.random() * 65, // 大水花尺寸 65px ~ 130px！
-          alpha: 1,
+            ? (Math.random() > 0.5 ? 'mud_splash.png' : 'mud_rock.png')
+            : (Math.random() > 0.5 ? 'water_splash.png' : 'water_bubble.png'),
+          size: 32 + Math.random() * 16, // 適度自然尺寸 32px ~ 48px，清晰不突兀
+          alpha: 0.85,
         });
       }
 
@@ -269,7 +272,7 @@ export class GoldPanMode extends BaseMode {
         this.promptText = '✨ 泥沙已洗淨、溪水清澈！伸手碰觸或傾斜淘金盤，將收穫入袋！';
       }
     } else {
-      this.sloshIntensity *= 0.88;
+      this.sloshIntensity *= 0.90;
     }
   }
 
@@ -626,15 +629,13 @@ export class GoldPanMode extends BaseMode {
       }
       ctx.restore();
 
-      // 盤中水浪激盪波紋 (隨晃動在盤緣激起亮白色水沫波浪)
+      // 盤中水浪微幅起伏 (柔和透明水光，不刺眼)
       ctx.save();
-      const waveShift = Math.sin(now * 0.007) * (this.pan.radiusX * 0.12 * this.sloshIntensity);
+      const waveShift = Math.sin(now * 0.006) * (this.pan.radiusX * 0.06 * this.sloshIntensity);
       ctx.beginPath();
-      ctx.ellipse(waveShift, 0, this.pan.radiusX * 0.84, this.pan.radiusY * 0.82, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(224, 242, 254, ${0.25 + this.sloshIntensity * 0.55})`;
-      ctx.lineWidth = 3.5 + this.sloshIntensity * 3.5;
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 14;
+      ctx.ellipse(waveShift, 0, this.pan.radiusX * 0.86, this.pan.radiusY * 0.84, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.12 + this.sloshIntensity * 0.22})`;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.restore();
 
@@ -650,24 +651,20 @@ export class GoldPanMode extends BaseMode {
 
     ctx.restore(); // 退出盤子坐標系
 
-    // 6. 繪製甩出的水花滴或泥石顆粒 (大尺寸、自然旋轉、水光陰影)
+    // 6. 繪製甩出的水花滴或泥石顆粒 (適中尺寸、自然柔和、不密集眩目)
     for (const sp of this.waterSplashes) {
       ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, sp.alpha));
+      ctx.globalAlpha = Math.max(0, Math.min(0.9, sp.alpha));
       ctx.translate(sp.x, sp.y);
       if (sp.rotation) ctx.rotate(sp.rotation);
 
       const spImg = getAsset(sp.imageName);
       if (spImg.complete && spImg.naturalWidth > 0) {
-        ctx.shadowColor = 'rgba(56, 189, 248, 0.65)';
-        ctx.shadowBlur = 10;
         ctx.drawImage(spImg, -sp.size / 2, -sp.size / 2, sp.size, sp.size);
       } else {
         ctx.beginPath();
-        ctx.arc(0, 0, sp.size * 0.28, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(186, 230, 253, 0.85)';
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 12;
+        ctx.arc(0, 0, sp.size * 0.25, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.75)';
         ctx.fill();
       }
       ctx.restore();
