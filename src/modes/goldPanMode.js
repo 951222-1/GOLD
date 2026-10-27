@@ -15,21 +15,21 @@ function getAsset(name) {
 
 // 貴重寶物列表 (對應切片後的透明圖片)
 const TREASURE_TYPES = [
-  { id: 'gold_dust', name: '天然淘金沙', imageName: 'gold_dust.png', icon: '✨', value: 800, weight: 10, color: '#facc15', isJunk: false, quote: '閃亮細緻的天然金粉！' },
-  { id: 'gold_coin', name: '西班牙古金幣', imageName: 'gold_coin.png', icon: '🪙', value: 2500, weight: 35, color: '#f59e0b', isJunk: false, quote: '沉睡百年的海盜古幣！' },
-  { id: 'gold_nugget', name: '天然狗頭金', imageName: 'gold_nugget.png', icon: '👑', value: 6500, weight: 80, color: '#fbbf24', isJunk: false, quote: '沉甸甸的珍稀大金塊！' },
-  { id: 'ruby', name: '閃耀紅寶石', imageName: 'ruby.png', icon: '💎', value: 12000, weight: 15, color: '#f43f5e', isJunk: false, quote: '剔透無瑕的深山寶石！' },
-  { id: 'amber', name: '遠古琥珀化石', imageName: 'amber.png', icon: '🦖', value: 20000, weight: 45, color: '#ea580c', isJunk: false, quote: '封存千萬年的史前奇蹟！' },
+  { id: 'gold_dust', name: '天然淘金沙', imageName: 'gold_dust.png', icon: '✨', value: 800, weight: 10, color: '#facc15', isJunk: false, quote: '閃亮細緻的天然金粉！', baseScale: 1.2 },
+  { id: 'gold_coin', name: '西班牙古金幣', imageName: 'gold_coin.png', icon: '🪙', value: 2500, weight: 35, color: '#f59e0b', isJunk: false, quote: '沉睡百年的海盜古幣！', baseScale: 1.15 },
+  { id: 'gold_nugget', name: '天然狗頭金', imageName: 'gold_nugget.png', icon: '👑', value: 6500, weight: 80, color: '#fbbf24', isJunk: false, quote: '沉甸甸的珍稀大金塊！', baseScale: 1.35 },
+  { id: 'ruby', name: '閃耀紅寶石', imageName: 'ruby.png', icon: '💎', value: 12000, weight: 15, color: '#f43f5e', isJunk: false, quote: '剔透無瑕的深山寶石！', baseScale: 1.2 },
+  { id: 'amber', name: '遠古琥珀化石', imageName: 'amber.png', icon: '🦖', value: 20000, weight: 45, color: '#ea580c', isJunk: false, quote: '封存千萬年的史前奇蹟！', baseScale: 1.3 },
 ];
 
 // 逗趣廢鐵與雜物列表 (增加淘洗驚喜與莞爾一笑的解壓感)
 const JUNK_TYPES = [
-  { id: 'rusty_bolt', name: '生鏽大螺帽', imageName: 'rusty_bolt.png', icon: '🔩', value: 1, weight: 25, color: '#a8a29e', isJunk: true, quote: '滿滿的鐵鏽味，老礦工掉的？' },
-  { id: 'soda_can', name: '壓扁易開罐', imageName: 'soda_can.png', icon: '🥫', value: 0, weight: 12, color: '#ef4444', isJunk: true, quote: '是誰在這麼美的河裡亂丟垃圾！' },
-  { id: 'old_boot', name: '破爛泡水鞋', imageName: 'old_boot.png', icon: '👞', value: 0, weight: 220, color: '#78350f', isJunk: true, quote: '傳說中的淘金老前輩之鞋！' },
-  { id: 'rusty_key', name: '神祕生鏽鑰匙', imageName: 'rusty_key.png', icon: '🗝️', value: 50, weight: 18, color: '#d97706', isJunk: true, quote: '不知道能打開哪座被遺忘的寶箱？' },
-  { id: 'old_magnet', name: '廢棄老磁鐵', imageName: 'old_magnet.png', icon: '🧲', value: 5, weight: 40, color: '#dc2626', isJunk: true, quote: '吸滿了一整層黑黑的重鐵砂！' },
-  { id: 'fish_bone', name: '深山魚骨頭', imageName: 'fish_bone.png', icon: '🦴', value: 0, weight: 5, color: '#e2e8f0', isJunk: true, quote: '純天然深山溪流鈣質補充物。' },
+  { id: 'rusty_bolt', name: '生鏽大螺帽', imageName: 'rusty_bolt.png', icon: '🔩', value: 1, weight: 25, color: '#a8a29e', isJunk: true, quote: '滿滿的鐵鏽味，老礦工掉的？', baseScale: 1.15 },
+  { id: 'soda_can', name: '壓扁易開罐', imageName: 'soda_can.png', icon: '🥫', value: 0, weight: 12, color: '#ef4444', isJunk: true, quote: '是誰在這麼美的河裡亂丟垃圾！', baseScale: 1.35 },
+  { id: 'old_boot', name: '破爛泡水鞋', imageName: 'old_boot.png', icon: '👞', value: 0, weight: 220, color: '#78350f', isJunk: true, quote: '傳說中的淘金老前輩之鞋！', baseScale: 1.45 },
+  { id: 'rusty_key', name: '神祕生鏽鑰匙', imageName: 'rusty_key.png', icon: '🗝️', value: 50, weight: 18, color: '#d97706', isJunk: true, quote: '不知道能打開哪座被遺忘的寶箱？', baseScale: 1.25 },
+  { id: 'old_magnet', name: '廢棄老磁鐵', imageName: 'old_magnet.png', icon: '🧲', value: 5, weight: 40, color: '#dc2626', isJunk: true, quote: '吸滿了一整層黑黑的重鐵砂！', baseScale: 1.3 },
+  { id: 'fish_bone', name: '深山魚骨頭', imageName: 'fish_bone.png', icon: '🦴', value: 0, weight: 5, color: '#e2e8f0', isJunk: true, quote: '純天然深山溪流鈣質補充物。', baseScale: 1.3 },
 ];
 
 export class GoldPanMode extends BaseMode {
@@ -173,14 +173,14 @@ export class GoldPanMode extends BaseMode {
       }
 
       const angle = Math.random() * Math.PI * 2;
-      const dist = 0.15 + Math.random() * 0.45;
+      const dist = 0.12 + Math.random() * 0.38;
 
       this.currentTreasures.push({
         ...selectedItem,
         relX: Math.cos(angle) * dist,
         relY: Math.sin(angle) * dist,
-        rotation: (Math.random() - 0.5) * 0.5,
-        scale: 0.85 + Math.random() * 0.3,
+        rotation: (Math.random() - 0.5) * 0.4,
+        scale: (selectedItem.baseScale || 1.2) * (0.95 + Math.random() * 0.2),
         collected: false,
       });
     }
@@ -297,10 +297,11 @@ export class GoldPanMode extends BaseMode {
       text: gainText,
       subText: t.quote,
       x: absX,
-      y: absY - 20,
+      y: absY - 40,
       alpha: 1,
       color: t.color,
       imageName: t.imageName,
+      isJunk: t.isJunk,
     });
 
     const allCollected = this.currentTreasures.every((item) => item.collected);
@@ -365,8 +366,8 @@ export class GoldPanMode extends BaseMode {
         const absY = this.pan.y + t.relY * this.pan.radiusY;
 
         let touched = false;
-        if (h1 && Math.hypot(h1.x - absX, h1.y - absY) < 65) touched = true;
-        if (h2 && Math.hypot(h2.x - absX, h2.y - absY) < 65) touched = true;
+        if (h1 && Math.hypot(h1.x - absX, h1.y - absY) < 95) touched = true;
+        if (h2 && Math.hypot(h2.x - absX, h2.y - absY) < 95) touched = true;
         if (isTilted) touched = true;
 
         if (touched) {
@@ -525,14 +526,29 @@ export class GoldPanMode extends BaseMode {
       ctx.globalAlpha = revealFactor;
 
       const itemImg = getAsset(t.imageName);
-      const itemSize = Math.max(48, this.pan.radiusX * 0.28) * t.scale;
+      // 大幅放大驚喜物品尺寸 (從 0.28 擴大至 0.52，洗淨時加入呼吸高光)
+      const baseItemSize = Math.max(90, this.pan.radiusX * 0.52);
+      const pulse = this.state === 'REVEALED' ? (1 + Math.sin(now * 0.005 + tx) * 0.06) : 1;
+      const itemSize = baseItemSize * t.scale * pulse;
 
       if (this.state === 'REVEALED') {
         // 洗淨後的珍寶高光光暈
         ctx.beginPath();
-        ctx.arc(tx, ty, itemSize * 0.65, 0, Math.PI * 2);
-        ctx.fillStyle = t.isJunk ? 'rgba(168, 162, 158, 0.35)' : 'rgba(250, 204, 21, 0.5)';
+        ctx.arc(tx, ty, itemSize * 0.62, 0, Math.PI * 2);
+        ctx.fillStyle = t.isJunk ? 'rgba(168, 162, 158, 0.45)' : 'rgba(250, 204, 21, 0.55)';
         ctx.fill();
+
+        // 四周閃爍星芒
+        const starAngle = now * 0.003;
+        for (let s = 0; s < 4; s++) {
+          const sa = starAngle + (s * Math.PI) / 2;
+          const sx = tx + Math.cos(sa) * (itemSize * 0.55);
+          const sy = ty + Math.sin(sa) * (itemSize * 0.55);
+          ctx.beginPath();
+          ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+          ctx.fillStyle = '#fef08a';
+          ctx.fill();
+        }
       }
 
       ctx.translate(tx, ty);
@@ -541,7 +557,7 @@ export class GoldPanMode extends BaseMode {
       if (itemImg.complete && itemImg.naturalWidth > 0) {
         ctx.drawImage(itemImg, -itemSize / 2, -itemSize / 2, itemSize, itemSize);
       } else {
-        ctx.font = '28px sans-serif';
+        ctx.font = '38px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(t.icon, 0, 0);
@@ -624,22 +640,40 @@ export class GoldPanMode extends BaseMode {
     // 7. 繪製第一人稱雙手臂握盤 (第一視角最關鍵沉浸感！)
     this.drawFirstPersonArms(ctx, width, height, this.pan.x, this.pan.y, this.pan.tilt, panW, panH);
 
-    // 8. 繪製浮動提示跳字
+    // 8. 繪製浮動提示跳字與超大驚喜寶物/廢鐵圖片
     for (const pop of this.popups) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, pop.alpha);
-      ctx.font = 'bold 20px sans-serif';
+
+      const popImg = getAsset(pop.imageName);
+      const popImgSize = 105; // 超大尺寸驚喜展示！
+
+      // 榮耀金色/銀灰色發光光環
+      const auraGrad = ctx.createRadialGradient(pop.x, pop.y - popImgSize * 0.5, 12, pop.x, pop.y - popImgSize * 0.5, popImgSize * 0.95);
+      auraGrad.addColorStop(0, pop.isJunk ? 'rgba(214, 211, 209, 0.65)' : 'rgba(250, 204, 21, 0.8)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(pop.x, pop.y - popImgSize * 0.5, popImgSize * 0.95, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 繪製大圖片
+      if (popImg.complete && popImg.naturalWidth > 0) {
+        ctx.drawImage(popImg, pop.x - popImgSize / 2, pop.y - popImgSize, popImgSize, popImgSize);
+      }
+
+      ctx.font = 'bold 22px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = pop.color;
       ctx.shadowColor = 'rgba(0,0,0,0.95)';
-      ctx.shadowBlur = 7;
-      ctx.fillText(pop.text, pop.x, pop.y);
+      ctx.shadowBlur = 8;
+      ctx.fillText(pop.text, pop.x, pop.y + 24);
 
       if (pop.subText) {
-        ctx.font = '13px sans-serif';
-        ctx.fillStyle = '#f1f5f9';
-        ctx.shadowBlur = 4;
-        ctx.fillText(pop.subText, pop.x, pop.y + 20);
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillStyle = '#f8fafc';
+        ctx.shadowBlur = 5;
+        ctx.fillText(pop.subText, pop.x, pop.y + 48);
       }
       ctx.restore();
     }
