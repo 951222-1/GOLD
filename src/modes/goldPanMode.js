@@ -1,23 +1,35 @@
 import { BaseMode } from './baseMode.js';
 import { sound } from '../services/audio.js';
 
-// 貴重寶物列表
+const BASE = import.meta.env.BASE_URL || './';
+const ASSETS_CACHE = {};
+
+function getAsset(name) {
+  if (!ASSETS_CACHE[name]) {
+    const img = new Image();
+    img.src = `${BASE}images/${name}`.replace('//', '/');
+    ASSETS_CACHE[name] = img;
+  }
+  return ASSETS_CACHE[name];
+}
+
+// 貴重寶物列表 (對應切片後的透明圖片)
 const TREASURE_TYPES = [
-  { id: 'gold_dust', name: '天然淘金沙', icon: '✨', value: 800, weight: 10, color: '#facc15', isJunk: false, quote: '閃亮細緻的天然金粉！' },
-  { id: 'gold_coin', name: '西班牙古金幣', icon: '🪙', value: 2500, weight: 35, color: '#f59e0b', isJunk: false, quote: '沉睡百年的海盜古幣！' },
-  { id: 'gold_nugget', name: '天然狗頭金', icon: '👑', value: 6500, weight: 80, color: '#fbbf24', isJunk: false, quote: '沉甸甸的珍稀大金塊！' },
-  { id: 'ruby', name: '閃耀紅寶石', icon: '💎', value: 12000, weight: 15, color: '#f43f5e', isJunk: false, quote: '剔透無瑕的深山寶石！' },
-  { id: 'amber', name: '遠古琥珀化石', icon: '🦖', value: 20000, weight: 45, color: '#ea580c', isJunk: false, quote: '封存千萬年的史前奇蹟！' },
+  { id: 'gold_dust', name: '天然淘金沙', imageName: 'gold_dust.png', icon: '✨', value: 800, weight: 10, color: '#facc15', isJunk: false, quote: '閃亮細緻的天然金粉！' },
+  { id: 'gold_coin', name: '西班牙古金幣', imageName: 'gold_coin.png', icon: '🪙', value: 2500, weight: 35, color: '#f59e0b', isJunk: false, quote: '沉睡百年的海盜古幣！' },
+  { id: 'gold_nugget', name: '天然狗頭金', imageName: 'gold_nugget.png', icon: '👑', value: 6500, weight: 80, color: '#fbbf24', isJunk: false, quote: '沉甸甸的珍稀大金塊！' },
+  { id: 'ruby', name: '閃耀紅寶石', imageName: 'ruby.png', icon: '💎', value: 12000, weight: 15, color: '#f43f5e', isJunk: false, quote: '剔透無瑕的深山寶石！' },
+  { id: 'amber', name: '遠古琥珀化石', imageName: 'amber.png', icon: '🦖', value: 20000, weight: 45, color: '#ea580c', isJunk: false, quote: '封存千萬年的史前奇蹟！' },
 ];
 
 // 逗趣廢鐵與雜物列表 (增加淘洗驚喜與莞爾一笑的解壓感)
 const JUNK_TYPES = [
-  { id: 'rusty_bolt', name: '生鏽大螺帽', icon: '🔩', value: 1, weight: 25, color: '#a8a29e', isJunk: true, quote: '滿滿的鐵鏽味，老礦工掉的？' },
-  { id: 'soda_can', name: '壓扁易開罐', icon: '🥫', value: 0, weight: 12, color: '#ef4444', isJunk: true, quote: '是誰在這麼美的河裡亂丟垃圾！' },
-  { id: 'old_boot', name: '破爛泡水鞋', icon: '👞', value: 0, weight: 220, color: '#78350f', isJunk: true, quote: '傳說中的淘金老前輩之鞋！' },
-  { id: 'rusty_key', name: '神祕生鏽鑰匙', icon: '🗝️', value: 50, weight: 18, color: '#d97706', isJunk: true, quote: '不知道能打開哪座被遺忘的寶箱？' },
-  { id: 'old_magnet', name: '廢棄老磁鐵', icon: '🧲', value: 5, weight: 40, color: '#dc2626', isJunk: true, quote: '吸滿了一整層黑黑的重鐵砂！' },
-  { id: 'fish_bone', name: '深山魚骨頭', icon: '🦴', value: 0, weight: 5, color: '#e2e8f0', isJunk: true, quote: '純天然深山溪流鈣質補充物。' },
+  { id: 'rusty_bolt', name: '生鏽大螺帽', imageName: 'rusty_bolt.png', icon: '🔩', value: 1, weight: 25, color: '#a8a29e', isJunk: true, quote: '滿滿的鐵鏽味，老礦工掉的？' },
+  { id: 'soda_can', name: '壓扁易開罐', imageName: 'soda_can.png', icon: '🥫', value: 0, weight: 12, color: '#ef4444', isJunk: true, quote: '是誰在這麼美的河裡亂丟垃圾！' },
+  { id: 'old_boot', name: '破爛泡水鞋', imageName: 'old_boot.png', icon: '👞', value: 0, weight: 220, color: '#78350f', isJunk: true, quote: '傳說中的淘金老前輩之鞋！' },
+  { id: 'rusty_key', name: '神祕生鏽鑰匙', imageName: 'rusty_key.png', icon: '🗝️', value: 50, weight: 18, color: '#d97706', isJunk: true, quote: '不知道能打開哪座被遺忘的寶箱？' },
+  { id: 'old_magnet', name: '廢棄老磁鐵', imageName: 'old_magnet.png', icon: '🧲', value: 5, weight: 40, color: '#dc2626', isJunk: true, quote: '吸滿了一整層黑黑的重鐵砂！' },
+  { id: 'fish_bone', name: '深山魚骨頭', imageName: 'fish_bone.png', icon: '🦴', value: 0, weight: 5, color: '#e2e8f0', isJunk: true, quote: '純天然深山溪流鈣質補充物。' },
 ];
 
 export class GoldPanMode extends BaseMode {
@@ -25,7 +37,7 @@ export class GoldPanMode extends BaseMode {
     super('goldpan', '體感淘金洗泥沙', { needPose: true, needHand: true });
 
     // 淘金盤位置與幾何
-    this.pan = { x: 0, y: 0, radiusX: 120, radiusY: 62, tilt: 0 };
+    this.pan = { x: 0, y: 0, radiusX: 130, radiusY: 70, tilt: 0 };
     this.panHistory = []; // 歷史軌跡 (用來精確判定畫圓旋轉動作)
 
     // 水流漩渦旋轉角度與旋轉強度 (ASMR 視覺)
@@ -37,9 +49,7 @@ export class GoldPanMode extends BaseMode {
     this.state = 'EMPTY';
     this.mudLevel = 0; // 100 -> 0 (混濁度)
 
-    // 盤內懸浮物、漩渦氣泡與水花
-    this.mudParticles = [];
-    this.vortexBubbles = [];
+    // 水花粒子與當前物品
     this.waterSplashes = [];
     this.currentTreasures = [];
     this.popups = [];
@@ -52,6 +62,19 @@ export class GoldPanMode extends BaseMode {
     this.roundsCompleted = 0;
 
     this.promptText = '👇 將雙手下移浸入溪流，舀起一盤泥沙！';
+
+    // 預熱加載常用圖片
+    this.preloadAssets();
+  }
+
+  preloadAssets() {
+    const list = [
+      'gold_pan.png', 'water_vortex.png', 'mud_gravel.png', 'river_bed.png',
+      'gold_dust.png', 'gold_coin.png', 'gold_nugget.png', 'ruby.png', 'amber.png',
+      'rusty_bolt.png', 'soda_can.png', 'old_boot.png', 'rusty_key.png', 'old_magnet.png', 'fish_bone.png',
+      'water_splash.png', 'water_bubble.png', 'mud_splash.png', 'mud_rock.png'
+    ];
+    list.forEach(getAsset);
   }
 
   init(width, height) {
@@ -73,8 +96,6 @@ export class GoldPanMode extends BaseMode {
     this.vortexSpeed = 0;
     this.swirlIntensity = 0;
     this.panHistory = [];
-    this.mudParticles = [];
-    this.vortexBubbles = [];
     this.waterSplashes = [];
     this.currentTreasures = [];
     this.popups = [];
@@ -109,37 +130,12 @@ export class GoldPanMode extends BaseMode {
     this.swirlIntensity = 0;
     sound.playScoopWater();
 
-    // 生成隨機泥沙與細礫顆粒
-    this.mudParticles = [];
-    const count = 55;
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = Math.random() * 0.82;
-      this.mudParticles.push({
-        angle,
-        dist,
-        size: 3 + Math.random() * 5,
-        color: Math.random() > 0.5 ? '#4e342e' : '#6d4c41',
-      });
-    }
-
-    // 生成漩渦旋轉小氣泡
-    this.vortexBubbles = [];
-    for (let i = 0; i < 20; i++) {
-      this.vortexBubbles.push({
-        angle: Math.random() * Math.PI * 2,
-        dist: 0.15 + Math.random() * 0.75,
-        size: 2 + Math.random() * 3,
-        speed: 0.03 + Math.random() * 0.04,
-      });
-    }
-
     // 隨機決定挖掘物 (1 ~ 3 件，有可能是真金，也可能是搞笑廢鐵)
     this.currentTreasures = [];
     const itemCount = 1 + (Math.random() < 0.45 ? 1 : 0) + (Math.random() < 0.18 ? 1 : 0);
 
     for (let i = 0; i < itemCount; i++) {
-      const isJunkRoll = Math.random() < 0.35; // 35% 機率挖出趣味廢鐵！
+      const isJunkRoll = Math.random() < 0.35; // 35% 機率挖出趣味廢鐵
       let selectedItem;
 
       if (isJunkRoll) {
@@ -154,29 +150,29 @@ export class GoldPanMode extends BaseMode {
       }
 
       const angle = Math.random() * Math.PI * 2;
-      const dist = 0.25 + Math.random() * 0.5;
+      const dist = 0.2 + Math.random() * 0.45;
 
       this.currentTreasures.push({
         ...selectedItem,
         relX: Math.cos(angle) * dist,
         relY: Math.sin(angle) * dist,
+        rotation: (Math.random() - 0.5) * 0.4,
+        scale: 0.85 + Math.random() * 0.3,
         collected: false,
       });
     }
 
-    this.promptText = '🌀 雙手畫圓旋轉淘洗～ 感受水流旋渦與泥沙漸漸沖刷！';
+    this.promptText = '🌀 雙手畫圓旋轉淘洗～ 感受水流旋渦與泥沙沖刷洗淨！';
   }
 
   // 偵測「雙手畫圓旋轉」動作物理
   detectCircularSwirl(curX, curY) {
-    // 記錄近期軌跡點 (約 18 幀)
     this.panHistory.push({ x: curX, y: curY, time: performance.now() });
     if (this.panHistory.length > 20) {
       this.panHistory.shift();
     }
     if (this.panHistory.length < 8) return 0;
 
-    // 計算這段時間軌跡的中心點
     let sumX = 0, sumY = 0;
     for (const pt of this.panHistory) {
       sumX += pt.x;
@@ -185,7 +181,6 @@ export class GoldPanMode extends BaseMode {
     const centerX = sumX / this.panHistory.length;
     const centerY = sumY / this.panHistory.length;
 
-    // 計算最新兩點相對於軌跡中心的夾角變化 (角速度 dTheta)
     const p1 = this.panHistory[this.panHistory.length - 2];
     const p2 = this.panHistory[this.panHistory.length - 1];
 
@@ -193,18 +188,16 @@ export class GoldPanMode extends BaseMode {
     const angle2 = Math.atan2(p2.y - centerY, p2.x - centerX);
 
     let dTheta = angle2 - angle1;
-    // 角度過界修正 [-PI, PI]
     while (dTheta > Math.PI) dTheta -= Math.PI * 2;
     while (dTheta < -Math.PI) dTheta += Math.PI * 2;
 
     const radius = Math.hypot(p2.x - centerX, p2.y - centerY);
 
-    // 當盤子有繞著中心旋轉，且旋轉半徑 > 12px
     if (radius > 12 && Math.abs(dTheta) > 0.04) {
-      return dTheta; // 傳回帶有順/逆時針方向的角速度
+      return dTheta;
     }
 
-    // 寬容後備：即使不是標準正圓，水平或橢圓晃動也提供一定淘洗力
+    // 寬容後備：水平晃動也提供一定淘洗力
     const speed2D = Math.hypot(p2.x - p1.x, p2.y - p1.y);
     if (speed2D > 3.5) {
       return (p2.x > p1.x ? 0.08 : -0.08);
@@ -227,21 +220,17 @@ export class GoldPanMode extends BaseMode {
       const washSpeed = Math.min(1.8, absD * 12);
       this.mudLevel = Math.max(0, this.mudLevel - washSpeed);
 
-      // 泥沙顆粒往外圍離心漂移
-      for (const p of this.mudParticles) {
-        p.dist = Math.min(0.95, p.dist + 0.003 * absD * 10);
-      }
-
       // 沿著切線甩出盤緣的水花泥水
       if (Math.random() < 0.6) {
         const splashAngle = this.vortexAngle + Math.random() * 0.5;
+        const isMudSplash = this.mudLevel > 35;
         this.waterSplashes.push({
-          x: this.pan.x + Math.cos(splashAngle) * (this.pan.radiusX * 0.9),
-          y: this.pan.y + Math.sin(splashAngle) * (this.pan.radiusY * 0.9),
+          x: this.pan.x + Math.cos(splashAngle) * (this.pan.radiusX * 0.85),
+          y: this.pan.y + Math.sin(splashAngle) * (this.pan.radiusY * 0.85),
           vx: Math.cos(splashAngle + Math.PI / 2) * (2 + Math.random() * 4),
           vy: -1.5 - Math.random() * 2.5,
-          size: 2.5 + Math.random() * 3.5,
-          color: this.mudLevel > 35 ? 'rgba(121, 85, 72, 0.7)' : 'rgba(186, 230, 253, 0.7)',
+          imageName: isMudSplash ? (Math.random() > 0.5 ? 'mud_splash.png' : 'mud_rock.png') : (Math.random() > 0.5 ? 'water_splash.png' : 'water_bubble.png'),
+          size: 20 + Math.random() * 18,
           alpha: 1,
         });
       }
@@ -253,7 +242,6 @@ export class GoldPanMode extends BaseMode {
         this.promptText = '✨ 溪水澄澈透底！伸手碰觸或傾倒淘金盤，看看洗出了什麼！';
       }
     } else {
-      // 停止旋轉時，旋渦慢慢減速 (解壓平滑感)
       this.vortexSpeed *= 0.92;
       this.swirlIntensity *= 0.94;
     }
@@ -271,12 +259,11 @@ export class GoldPanMode extends BaseMode {
 
     if (t.isJunk) {
       this.junkCount += 1;
-      sound.playJunk(); // 逗趣的廢鐵音效！
+      sound.playJunk();
     } else {
-      sound.playCoinClink(); // 清脆金幣碰撞聲！
+      sound.playCoinClink();
     }
 
-    // 漂浮逗趣與驚喜提示
     const absX = this.pan.x + t.relX * this.pan.radiusX;
     const absY = this.pan.y + t.relY * this.pan.radiusY;
     const gainText = t.isJunk
@@ -290,9 +277,9 @@ export class GoldPanMode extends BaseMode {
       y: absY - 15,
       alpha: 1,
       color: t.color,
+      imageName: t.imageName,
     });
 
-    // 檢查是否皆已收集
     const allCollected = this.currentTreasures.every((item) => item.collected);
     if (allCollected) {
       setTimeout(() => {
@@ -323,7 +310,6 @@ export class GoldPanMode extends BaseMode {
       targetY = h1.y;
     }
 
-    // 平滑移動盤子 (柔和解壓阻尼)
     this.pan.x += (targetX - this.pan.x) * 0.35;
     this.pan.y += (targetY - this.pan.y) * 0.35;
     this.pan.tilt = tiltAngle;
@@ -340,11 +326,6 @@ export class GoldPanMode extends BaseMode {
       }
     } else if (this.state === 'SIFTING') {
       this.processCircularSifting(dTheta);
-
-      // 更新盤中小氣泡繞中心旋轉
-      for (const b of this.vortexBubbles) {
-        b.angle += this.vortexSpeed * b.speed * 20;
-      }
     } else if (this.state === 'REVEALED') {
       const isTilted = Math.abs(this.pan.tilt) > 0.45 || this.pan.y < height * 0.35;
 
@@ -354,8 +335,8 @@ export class GoldPanMode extends BaseMode {
         const absY = this.pan.y + t.relY * this.pan.radiusY;
 
         let touched = false;
-        if (h1 && Math.hypot(h1.x - absX, h1.y - absY) < 50) touched = true;
-        if (h2 && Math.hypot(h2.x - absX, h2.y - absY) < 50) touched = true;
+        if (h1 && Math.hypot(h1.x - absX, h1.y - absY) < 55) touched = true;
+        if (h2 && Math.hypot(h2.x - absX, h2.y - absY) < 55) touched = true;
         if (isTilted) touched = true;
 
         if (touched) {
@@ -364,7 +345,7 @@ export class GoldPanMode extends BaseMode {
       }
     }
 
-    // 3. 更新溢流水滴粒子
+    // 3. 更新甩出的粒子
     for (let i = this.waterSplashes.length - 1; i >= 0; i--) {
       const sp = this.waterSplashes[i];
       sp.x += sp.vx;
@@ -376,7 +357,7 @@ export class GoldPanMode extends BaseMode {
       }
     }
 
-    // 4. 更新浮動獎勵/逗趣提示文字
+    // 4. 更新浮動文字
     for (let i = this.popups.length - 1; i >= 0; i--) {
       const pop = this.popups[i];
       pop.y -= 1.1;
@@ -386,170 +367,145 @@ export class GoldPanMode extends BaseMode {
       }
     }
 
-    // 5. 渲染視覺畫面
+    // 5. 渲染全景畫面
     this.renderCanvas(ctx, width, height, h1, h2, streamY);
   }
 
   renderCanvas(ctx, width, height, h1, h2, streamY) {
     ctx.save();
 
-    // 1. 溪流水波環境
-    const streamGrad = ctx.createLinearGradient(0, streamY, 0, height);
-    streamGrad.addColorStop(0, 'rgba(14, 116, 144, 0.45)');
-    streamGrad.addColorStop(0.35, 'rgba(3, 105, 161, 0.7)');
-    streamGrad.addColorStop(1, 'rgba(8, 47, 73, 0.92)');
-    ctx.fillStyle = streamGrad;
-    ctx.fillRect(0, streamY, width, height - streamY);
+    // 1. 繪製底部溪流河床圖片 (River Bed)
+    const riverImg = getAsset('river_bed.png');
+    const riverHeight = height - streamY + 45;
+    if (riverImg.complete && riverImg.naturalWidth > 0) {
+      ctx.drawImage(riverImg, 0, streamY - 35, width, riverHeight);
+    } else {
+      // 後備漸層
+      const streamGrad = ctx.createLinearGradient(0, streamY, 0, height);
+      streamGrad.addColorStop(0, 'rgba(14, 116, 144, 0.45)');
+      streamGrad.addColorStop(1, 'rgba(8, 47, 73, 0.92)');
+      ctx.fillStyle = streamGrad;
+      ctx.fillRect(0, streamY, width, height - streamY);
+    }
 
     // 溪流水波波紋線
     ctx.beginPath();
     ctx.moveTo(0, streamY);
-    for (let x = 0; x <= width; x += 25) {
-      const wave = Math.sin(x * 0.02 + performance.now() * 0.0025) * 6;
+    for (let x = 0; x <= width; x += 30) {
+      const wave = Math.sin(x * 0.02 + performance.now() * 0.0025) * 5;
       ctx.lineTo(x, streamY + wave);
     }
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+    ctx.lineWidth = 2.0;
     ctx.stroke();
 
-    // 溪底閃爍的金沙微光
-    ctx.font = '12px sans-serif';
-    ctx.fillStyle = '#fde047';
-    for (let i = 0; i < 5; i++) {
-      const gx = ((i * 200 + performance.now() * 0.018) % (width - 40)) + 20;
-      const gy = streamY + 28 + (i % 3) * 18;
-      ctx.fillText('✨ 溪流金脈', gx, gy);
-    }
-
-    // 2. 繪製淘金盤
+    // 2. 進入淘金盤坐標系
     ctx.save();
     ctx.translate(this.pan.x, this.pan.y);
     ctx.rotate(this.pan.tilt);
 
-    // 盤體外金屬深沈邊框
-    ctx.beginPath();
-    ctx.ellipse(0, 0, this.pan.radiusX, this.pan.radiusY, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#1e293b';
-    ctx.fill();
-    ctx.lineWidth = 7;
-    ctx.strokeStyle = '#475569';
-    ctx.stroke();
+    const panImg = getAsset('gold_pan.png');
+    const panW = this.pan.radiusX * 2.15;
+    const panH = this.pan.radiusY * 2.15;
 
-    // 盤內同心防滑深條紋 (Riffles 抓金刻痕)
-    ctx.beginPath();
-    ctx.ellipse(0, 0, this.pan.radiusX * 0.8, this.pan.radiusY * 0.8, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    // 繪製金屬淘金盤圖片
+    if (panImg.complete && panImg.naturalWidth > 0) {
+      ctx.drawImage(panImg, -panW / 2, -panH / 2, panW, panH);
+    } else {
+      // 後備盤身繪製
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.pan.radiusX, this.pan.radiusY, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#1e293b';
+      ctx.fill();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#475569';
+      ctx.stroke();
+    }
 
-    ctx.beginPath();
-    ctx.ellipse(0, 0, this.pan.radiusX * 0.58, this.pan.radiusY * 0.58, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // 3. 繪製盤內寶物與逗趣廢鐵
+    // 3. 繪製盤內寶物與逗趣廢鐵 (依泥水混濁度逐漸浮現)
     for (const t of this.currentTreasures) {
       if (t.collected) continue;
       const tx = t.relX * this.pan.radiusX;
       const ty = t.relY * this.pan.radiusY;
 
-      // 泥沙厚度漸層決定寶物的可見度 (泥沙沖淨前隱約若現，沖淨後光芒四射)
+      // 泥沙厚度漸層決定寶物的可見度
       const revealFactor = Math.min(1, Math.max(0.08, (100 - this.mudLevel) / 70));
       ctx.save();
       ctx.globalAlpha = revealFactor;
 
-      // 如果已徹底洗淨，寶物有閃爍光圈，廢鐵有逗趣鐵鏽光
+      const itemImg = getAsset(t.imageName);
+      const itemSize = 58 * t.scale;
+
       if (this.state === 'REVEALED') {
+        // 洗淨後的金色/閃爍光暈
         ctx.beginPath();
-        ctx.arc(tx, ty, 18, 0, Math.PI * 2);
+        ctx.arc(tx, ty, itemSize * 0.65, 0, Math.PI * 2);
         ctx.fillStyle = t.isJunk ? 'rgba(168, 162, 158, 0.35)' : 'rgba(250, 204, 21, 0.45)';
         ctx.fill();
       }
 
-      ctx.font = '24px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(t.icon, tx, ty);
+      ctx.translate(tx, ty);
+      ctx.rotate(t.rotation);
+
+      if (itemImg.complete && itemImg.naturalWidth > 0) {
+        ctx.drawImage(itemImg, -itemSize / 2, -itemSize / 2, itemSize, itemSize);
+      } else {
+        // 後備 Emoji
+        ctx.font = '26px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(t.icon, 0, 0);
+      }
       ctx.restore();
     }
 
-    // 4. 泥水從「混濁變清澈」的平滑漸層層 (Mud Water Turbidity Layer)
+    // 4. 繪製盤中泥沙與礫石層 (Mud & Gravel Texture)
     if (this.mudLevel > 0) {
-      const mudRatio = this.mudLevel / 100; // 1.0 (濃濁泥漿) -> 0.0 (純淨透明)
-      const mudGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, this.pan.radiusX * 0.88);
+      const mudRatio = this.mudLevel / 100;
+      ctx.save();
+      ctx.globalAlpha = mudRatio * 0.95;
 
-      // 色彩從深濃泥漿棕 -> 琥珀半透明泥水 -> 晶瑩溪水漸變
-      const r = Math.round(78 + (56 - 78) * (1 - mudRatio));
-      const g = Math.round(52 + (189 - 52) * (1 - mudRatio));
-      const b = Math.round(34 + (248 - 34) * (1 - mudRatio));
-      const a = 0.15 + 0.78 * mudRatio;
+      const mudImg = getAsset('mud_gravel.png');
+      const mudW = this.pan.radiusX * 1.85;
+      const mudH = this.pan.radiusY * 1.85;
 
-      mudGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a})`);
-      mudGrad.addColorStop(0.7, `rgba(${r - 10}, ${g - 8}, ${b - 5}, ${a * 0.95})`);
-      mudGrad.addColorStop(1, `rgba(${r - 20}, ${g - 15}, ${b - 10}, ${a * 0.8})`);
-
-      ctx.beginPath();
-      ctx.ellipse(0, 0, this.pan.radiusX * 0.88, this.pan.radiusY * 0.88, 0, 0, Math.PI * 2);
-      ctx.fillStyle = mudGrad;
-      ctx.fill();
-
-      // 泥沙與雜石顆粒隨旋轉向外散開
-      for (const p of this.mudParticles) {
-        const px = Math.cos(p.angle) * p.dist * this.pan.radiusX;
-        const py = Math.sin(p.angle) * p.dist * this.pan.radiusY;
+      if (mudImg.complete && mudImg.naturalWidth > 0) {
+        // 隨旋轉角度微動
+        ctx.rotate(this.vortexAngle * 0.3);
+        ctx.drawImage(mudImg, -mudW / 2, -mudH / 2, mudW, mudH);
+      } else {
+        // 後備泥水遮罩
         ctx.beginPath();
-        ctx.arc(px, py, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = mudRatio * 0.85;
+        ctx.ellipse(0, 0, this.pan.radiusX * 0.88, this.pan.radiusY * 0.88, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(85, 55, 35, ${mudRatio * 0.85})`;
         ctx.fill();
-        ctx.globalAlpha = 1;
       }
+      ctx.restore();
     } else {
-      // 泥沙洗淨後的清澈水光倒影 (Crystal Clear Mountain Water)
+      // 泥沙沖淨後的清澈水光倒影
       const clearGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, this.pan.radiusX * 0.85);
       clearGrad.addColorStop(0, 'rgba(56, 189, 248, 0.22)');
-      clearGrad.addColorStop(1, 'rgba(14, 165, 233, 0.08)');
+      clearGrad.addColorStop(1, 'rgba(14, 165, 233, 0.05)');
       ctx.beginPath();
       ctx.ellipse(0, 0, this.pan.radiusX * 0.88, this.pan.radiusY * 0.88, 0, 0, Math.PI * 2);
       ctx.fillStyle = clearGrad;
       ctx.fill();
     }
 
-    // 5. 畫圓旋轉水流漩渦 (ASMR Swirling Water Vortex)
+    // 5. 繪製旋轉水流漩渦 (Water Vortex)
     if (this.state === 'SIFTING') {
       ctx.save();
+      const vortexImg = getAsset('water_vortex.png');
+      const vortexSize = this.pan.radiusX * 1.7;
       ctx.rotate(this.vortexAngle);
+      ctx.globalAlpha = Math.min(0.85, 0.25 + this.swirlIntensity * 0.6);
 
-      // 旋轉水渦螺旋線
-      ctx.strokeStyle = `rgba(224, 242, 254, ${0.15 + this.swirlIntensity * 0.4})`;
-      ctx.lineWidth = 2.5;
-      for (let arm = 0; arm < 3; arm++) {
-        ctx.beginPath();
-        const baseOffset = (arm * Math.PI * 2) / 3;
-        for (let r = 8; r < this.pan.radiusX * 0.75; r += 6) {
-          const a = baseOffset + r * 0.04;
-          const x = Math.cos(a) * r;
-          const y = Math.sin(a) * (r * (this.pan.radiusY / this.pan.radiusX));
-          if (r === 8) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+      if (vortexImg.complete && vortexImg.naturalWidth > 0) {
+        ctx.drawImage(vortexImg, -vortexSize / 2, -vortexSize / 2 * (this.pan.radiusY / this.pan.radiusX), vortexSize, vortexSize * (this.pan.radiusY / this.pan.radiusX));
       }
-
-      // 漩渦中旋轉的水珠小氣泡
-      for (const b of this.vortexBubbles) {
-        const bx = Math.cos(b.angle) * b.dist * this.pan.radiusX;
-        const by = Math.sin(b.angle) * b.dist * this.pan.radiusY;
-        ctx.beginPath();
-        ctx.arc(bx, by, b.size, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-        ctx.fill();
-      }
-
       ctx.restore();
 
-      // 淘洗進度提示 (柔和指示)
+      // 泥水混濁度文字提示
       const pct = Math.round(this.mudLevel);
       ctx.font = 'bold 13px sans-serif';
       ctx.textAlign = 'center';
@@ -559,19 +515,25 @@ export class GoldPanMode extends BaseMode {
       ctx.fillText(`泥水混濁度: ${pct}%`, 0, -this.pan.radiusY - 14);
     }
 
-    ctx.restore(); // 離開盤子座標系
+    ctx.restore(); // 退出盤子座標系
 
-    // 6. 繪製甩出的水花滴
+    // 6. 繪製甩出的水花滴或泥石顆粒
     for (const sp of this.waterSplashes) {
-      ctx.beginPath();
-      ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
-      ctx.fillStyle = sp.color;
+      ctx.save();
       ctx.globalAlpha = Math.max(0, sp.alpha);
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      const spImg = getAsset(sp.imageName);
+      if (spImg.complete && spImg.naturalWidth > 0) {
+        ctx.drawImage(spImg, sp.x - sp.size / 2, sp.y - sp.size / 2, sp.size, sp.size);
+      } else {
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.7)';
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
-    // 7. 繪製浮動提示跳字 (包含搞笑吐槽與珍貴獲獎)
+    // 7. 繪製浮動提示跳字
     for (const pop of this.popups) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, pop.alpha);
