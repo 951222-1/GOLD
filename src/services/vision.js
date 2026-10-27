@@ -71,16 +71,19 @@ export class VisionEngine {
     }
   }
 
-  detect(video, timestamp, { needPose = true, needHand = true } = {}) {
+  detect(video, timestamp, { needPose = false, needHand = true } = {}) {
     let poseResult = null;
     let handResult = null;
 
-    if (needPose && this.poseLandmarker) {
-      poseResult = this.poseLandmarker.detectForVideo(video, timestamp);
-    }
-
-    if (needHand && this.handLandmarker) {
-      handResult = this.handLandmarker.detectForVideo(video, timestamp);
+    try {
+      if (needPose && this.poseLandmarker) {
+        poseResult = this.poseLandmarker.detectForVideo(video, timestamp);
+      }
+      if (needHand && this.handLandmarker) {
+        handResult = this.handLandmarker.detectForVideo(video, timestamp);
+      }
+    } catch (err) {
+      console.warn('Vision detection frame skipped:', err);
     }
 
     return { poseResult, handResult };

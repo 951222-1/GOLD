@@ -117,28 +117,34 @@ function updateFps() {
 function renderLoop() {
   if (!running) return;
 
-  if (camera.isReady() && video.currentTime !== lastVideoTime) {
-    lastVideoTime = video.currentTime;
-    const timestamp = performance.now();
-    const width = stage.clientWidth;
-    const height = stage.clientHeight;
+  try {
+    if (camera.isReady() && video.currentTime !== lastVideoTime) {
+      lastVideoTime = video.currentTime;
+      const timestamp = performance.now();
+      const width = stage.clientWidth;
+      const height = stage.clientHeight;
 
-    const { poseResult, handResult } = visionEngine.detect(
-      video,
-      timestamp,
-      goldPanGame.requirements
-    );
+      const { poseResult, handResult } = visionEngine.detect(
+        video,
+        timestamp,
+        goldPanGame.requirements
+      );
 
-    renderer.clear(width, height);
-    goldPanGame.update({ handResult, poseResult }, renderer, width, height);
+      renderer.clear(width, height);
+      goldPanGame.update({ handResult, poseResult }, renderer, width, height);
 
-    const detected = poseResult?.landmarks?.[0] || handResult?.landmarks?.length;
-    detectionEl.textContent = detected ? '已偵測' : '未偵測';
-    updateMetricsUI();
-    updateFps();
+      const detected = poseResult?.landmarks?.[0] || handResult?.landmarks?.length;
+      detectionEl.textContent = detected ? '已偵測' : '未偵測';
+      updateMetricsUI();
+      updateFps();
+    }
+  } catch (err) {
+    console.warn('Render loop encountered recoverable frame error:', err);
+  } finally {
+    if (running) {
+      requestAnimationFrame(renderLoop);
+    }
   }
-
-  requestAnimationFrame(renderLoop);
 }
 
 async function start() {

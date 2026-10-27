@@ -34,7 +34,7 @@ const JUNK_TYPES = [
 
 export class GoldPanMode extends BaseMode {
   constructor() {
-    super('goldpan', '體感淘金洗泥沙', { needPose: true, needHand: true });
+    super('goldpan', '體感淘金洗泥沙', { needPose: false, needHand: true });
 
     // 淘金盤位置與動態
     this.pan = { x: 0, y: 0, radiusX: 260, radiusY: 160, tilt: 0 };
@@ -414,53 +414,61 @@ export class GoldPanMode extends BaseMode {
     const handR = getAsset('fp_hand_right.png');
 
     // 左手臂：從螢幕左下角延伸至盤緣左側 (有力緊扣盤緣)
-    if (handL.complete && handL.naturalWidth > 0) {
-      const rx_l = -panW * 0.43;
-      const ry_l = panH * 0.06;
-      const gripLx = panX + rx_l * Math.cos(tiltAngle) - ry_l * Math.sin(tiltAngle);
-      const gripLy = panY + rx_l * Math.sin(tiltAngle) + ry_l * Math.cos(tiltAngle);
-      const anchorLx = width * 0.05;
-      const anchorLy = height + 40;
+    if (handL && handL.complete && handL.naturalWidth > 0) {
+      try {
+        const rx_l = -panW * 0.43;
+        const ry_l = panH * 0.06;
+        const gripLx = panX + rx_l * Math.cos(tiltAngle) - ry_l * Math.sin(tiltAngle);
+        const gripLy = panY + rx_l * Math.sin(tiltAngle) + ry_l * Math.cos(tiltAngle);
+        const anchorLx = width * 0.05;
+        const anchorLy = height + 40;
 
-      const distL = Math.hypot(gripLx - anchorLx, gripLy - anchorLy);
-      const angleL = Math.atan2(gripLy - anchorLy, gripLx - anchorLx);
+        const distL = Math.hypot(gripLx - anchorLx, gripLy - anchorLy);
+        const angleL = Math.atan2(gripLy - anchorLy, gripLx - anchorLx);
 
-      const srcDistL = Math.hypot(200, -290);
-      const srcAngleL = Math.atan2(-290, 200);
-      const scaleL = distL / srcDistL;
-      const rotL = angleL - srcAngleL;
+        const srcDistL = Math.hypot(200, -290);
+        const srcAngleL = Math.atan2(-290, 200);
+        const scaleL = Math.max(0.2, distL / srcDistL);
+        const rotL = angleL - srcAngleL;
 
-      ctx.save();
-      ctx.translate(gripLx, gripLy);
-      ctx.rotate(rotL);
-      ctx.scale(scaleL, scaleL);
-      ctx.drawImage(handL, -270, -70);
-      ctx.restore();
+        ctx.save();
+        ctx.translate(gripLx, gripLy);
+        ctx.rotate(rotL);
+        ctx.scale(scaleL, scaleL);
+        ctx.drawImage(handL, -270, -70);
+        ctx.restore();
+      } catch (errL) {
+        console.warn('drawFirstPersonArms left hand error:', errL);
+      }
     }
 
     // 右手臂：從螢幕右下角延伸至盤緣右側 (有力緊扣盤緣)
-    if (handR.complete && handR.naturalWidth > 0) {
-      const rx_r = panW * 0.43;
-      const ry_r = panH * 0.06;
-      const gripRx = panX + rx_r * Math.cos(tiltAngle) - ry_r * Math.sin(tiltAngle);
-      const gripRy = panY + rx_r * Math.sin(tiltAngle) + ry_r * Math.cos(tiltAngle);
-      const anchorRx = width * 0.95;
-      const anchorLy = height + 40;
+    if (handR && handR.complete && handR.naturalWidth > 0) {
+      try {
+        const rx_r = panW * 0.43;
+        const ry_r = panH * 0.06;
+        const gripRx = panX + rx_r * Math.cos(tiltAngle) - ry_r * Math.sin(tiltAngle);
+        const gripRy = panY + rx_r * Math.sin(tiltAngle) + ry_r * Math.cos(tiltAngle);
+        const anchorRx = width * 0.95;
+        const anchorLy = height + 40;
 
-      const distR = Math.hypot(gripRx - anchorRx, gripRy - anchorRy);
-      const angleR = Math.atan2(gripRy - anchorRy, gripRx - anchorRx);
+        const distR = Math.hypot(gripRx - anchorRx, gripRy - anchorRy);
+        const angleR = Math.atan2(gripRy - anchorRy, gripRx - anchorRx);
 
-      const srcDistR = Math.hypot(-195, -290);
-      const srcAngleR = Math.atan2(-290, -195);
-      const scaleR = distR / srcDistR;
-      const rotR = angleR - srcAngleR;
+        const srcDistR = Math.hypot(-195, -290);
+        const srcAngleR = Math.atan2(-290, -195);
+        const scaleR = Math.max(0.2, distR / srcDistR);
+        const rotR = angleR - srcAngleR;
 
-      ctx.save();
-      ctx.translate(gripRx, gripRy);
-      ctx.rotate(rotR);
-      ctx.scale(scaleR, scaleR);
-      ctx.drawImage(handR, -55, -70);
-      ctx.restore();
+        ctx.save();
+        ctx.translate(gripRx, gripRy);
+        ctx.rotate(rotR);
+        ctx.scale(scaleR, scaleR);
+        ctx.drawImage(handR, -55, -70);
+        ctx.restore();
+      } catch (errR) {
+        console.warn('drawFirstPersonArms right hand error:', errR);
+      }
     }
   }
 
