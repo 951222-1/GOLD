@@ -93,13 +93,16 @@ let lastFpsUpdate = performance.now();
 
 soundToggle.addEventListener('click', () => {
   sound.init();
-  sound.enabled = !sound.enabled;
-  soundToggle.textContent = sound.enabled ? '🔊 音效' : '🔇 靜音';
+  const enabled = sound.toggleSound();
+  soundToggle.textContent = enabled ? '🔊 音效' : '🔇 靜音';
   sound.playClick();
 });
 
-// 使用者與頁面首次互動即預先解鎖音效與預載 MP3
-window.addEventListener('pointerdown', () => sound.init(), { once: true });
+// 使用者與頁面首次互動即預先解鎖音效與預載 MP3，並自動啟動循環背景音樂
+window.addEventListener('pointerdown', () => {
+  sound.init();
+  sound.playBgm();
+}, { once: true });
 
 function updateMetricsUI() {
   const m = goldPanGame.getMetrics();
@@ -154,6 +157,7 @@ function renderLoop() {
 async function start() {
   if (running) return;
   sound.playClick();
+  sound.playBgm();
   startButton.disabled = true;
   statusEl.textContent = '載入模型中…';
   statusDot.className = 'dot';

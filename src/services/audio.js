@@ -9,6 +9,8 @@ class SoundEffects {
     this.lastWaterSloshTime = 0;
     this.audioBuffers = {};
     this.loading = false;
+    this.bgmAudio = null;
+    this.bgmPlaying = false;
   }
 
   init() {
@@ -24,6 +26,47 @@ class SoundEffects {
     if (!this.loading && this.ctx) {
       this.loadSoundAssets();
     }
+    // 首次使用者互動時確保背景音樂就緒
+    this.initBgm();
+  }
+
+  initBgm() {
+    if (!this.bgmAudio) {
+      const url = `${BASE}audio/bgm.mp3`.replace('//', '/');
+      const audio = new Audio(url);
+      audio.loop = true;
+      audio.volume = 0.35; // 舒適自然的背景音樂音量 (不蓋過溪水拍打與金幣清脆聲)
+      this.bgmAudio = audio;
+    }
+  }
+
+  playBgm() {
+    this.initBgm();
+    if (!this.bgmAudio) return;
+    if (this.enabled) {
+      this.bgmAudio.play().then(() => {
+        this.bgmPlaying = true;
+      }).catch((e) => {
+        console.warn('BGM auto-play prevented until user interaction:', e);
+      });
+    }
+  }
+
+  pauseBgm() {
+    if (this.bgmAudio) {
+      this.bgmAudio.pause();
+      this.bgmPlaying = false;
+    }
+  }
+
+  toggleSound() {
+    this.enabled = !this.enabled;
+    if (!this.enabled) {
+      this.pauseBgm();
+    } else {
+      this.playBgm();
+    }
+    return this.enabled;
   }
 
   // 預載外部 MP3 音效檔案並透過 AudioContext 解碼為高品質低延遲 Buffer (兼容 Promise 與 Callback)
